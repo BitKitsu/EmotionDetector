@@ -14,6 +14,30 @@ from config import DATA_DIR, CAMERA_SETTINGS, UI_SETTINGS, EMOTION_DETECTION_SET
 
 logger = logging.getLogger(__name__)
 
+# Używamy standardowego cv2.putText z podstawieniem polskich znaków
+# zamiast cv2.freetype, które może nie być dostępne we wszystkich instalacjach
+logger.info("Using standard OpenCV text rendering with Polish character substitution.")
+
+def _draw_text(img: np.ndarray, text: str, pos: Tuple[int, int], font_scale: float = 0.7,
+               color: Tuple[int, int, int] = (255, 255, 255), thickness: int = 2) -> None:
+    """Rysuje tekst na obrazie z obsługą polskich znaków.
+    
+    Używa standardowego cv2.putText z podstawieniem znaków specjalnych.
+    """
+    # Mapa polskich znaków do ich odpowiedników ASCII
+    polish_chars = {
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n',
+        'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N',
+        'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+    }
+    
+    # Zamień polskie znaki na ich odpowiedniki ASCII
+    clean_text = ''.join(polish_chars.get(c, c) for c in text)
+    
+    # Użyj standardowego putText z czcionką, która obsługuje szeroki zakres znaków
+    cv2.putText(img, clean_text, pos, cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness, cv2.LINE_AA)
+
 
 class AuthState(Enum):
     NOT_AUTHENTICATED = "Nieuwierzytelniony"
@@ -91,6 +115,10 @@ class BiometricSystem:
         self.last_update_time = time.time()
         self.frame_count = 0
         self.fps = 0
+        self.last_authentication_time = 0.0
+        self.last_confirmation_increment_time = 0.0
+        self.confirmation_count = 0
+        self.required_confirmations = 3
         
         # Ustawienia
         self.min_confidence = 0.5  # Minimalna pewność do rozważenia rozpoznania
@@ -178,21 +206,17 @@ class BiometricSystem:
         
         return False
     
-    def authenticate_user(self, frame: np.ndarray) -> Optional[UserSession]:
-        """Uwierzytelnia użytkownika na podstawie twarzy i emocji.
+    def authenticate_user_with_results(self, frame: np.ndarray, face_results: List[Tuple[str, float, Tuple[int, int, int, int]]]) -> Optional[UserSession]:
+        """Uwierzytelnia użytkownika na podstawie PRZETWORZONYCH wyników rozpoznawania twarzy i emocji.
         
         Args:
-            frame: Obraz z kamerki
+            frame: Obraz z kamerki (używany do analizy emocji, wyniki rozpoznawania twarzy są już podane).
+            face_results: Lista wyników rozpoznawania twarzy.
             
         Returns:
-            Obiekt UserSession jeśli uwierzytelnienie się powiodło, None w przeciwnym wypadku
+            Obiekt UserSession jeśli uwierzytelnienie się powiodło, None w przeciwnym wypadku.
         """
-        # Aktualizacja FPS
-        self._update_fps()
-        
-        # Wykrywanie i rozpoznawanie twarzy
-        face_results = self.face_recognition.recognize_face(frame)
-        
+        # Logika funkcji authenticate_user_with_results zaczyna się tutaj:
         if not face_results:
             self.current_session = None
             return None
@@ -240,8 +264,10 @@ class BiometricSystem:
         if confidence >= self.min_confidence and session.auth_state != AuthState.AUTHENTICATED:
             logger.debug(f"Potencjalne dopasowanie: {user_id} (pewność: {confidence:.2f}, próg: {self.match_threshold})")
             
+            logger.debug(f"Checking match_threshold for {user_id}: confidence={confidence:.4f}, match_threshold={self.match_threshold}")
             if confidence >= self.match_threshold:
                 self.confirmation_count += 1
+                self.last_confirmation_increment_time = current_time # Aktualizuj czas ostatniego przyrostu TUTAJ
                 logger.debug(f"Dobre dopasowanie: {self.confirmation_count}/{self.required_confirmations}")
                 
                 if self.confirmation_count >= self.required_confirmations:
@@ -250,18 +276,21 @@ class BiometricSystem:
                     session.last_seen = current_time
                     self.last_authentication_time = current_time
                     self.confirmation_count = 0
+                    self.last_confirmation_increment_time = 0.0 # Resetuj czas przyrostu
                     logger.info(f"Użytkownik {user_id} pomyślnie uwierzytelniony (pewność: {confidence:.2f})")
             else:
                 # Resetuj licznik jeśli pewność spadnie poniżej progu
                 if self.confirmation_count > 0:
                     logger.debug("Resetowanie licznika potwierdzeń - zbyt niska pewność")
                     self.confirmation_count = 0
+                    self.last_confirmation_increment_time = 0.0 # Resetuj czas przyrostu
         
-        # Resetuj licznik jeśli minęło dużo czasu od ostatniego dobrego dopasowania
-        if current_time - self.last_authentication_time > 5.0:  # 5 sekund
-            if self.confirmation_count > 0:
-                logger.debug("Resetowanie licznika potwierdzeń - przekroczono czas")
+        # Resetuj licznik potwierdzeń, jeśli sekwencja utknęła (brak postępu)
+        if 0 < self.confirmation_count < self.required_confirmations:
+            if current_time - self.last_confirmation_increment_time > 3.0:  # Np. 3 sekundy na kolejny dobry match
+                logger.debug(f"Resetowanie licznika potwierdzeń ({self.confirmation_count}) - przekroczono czas (3s) od ostatniego przyrostu.")
                 self.confirmation_count = 0
+                self.last_confirmation_increment_time = 0.0
             
             # Jeśli użytkownik jest uwierzytelniony, aktualizuj historię emocji
             if session.auth_state == AuthState.AUTHENTICATED:
@@ -273,6 +302,12 @@ class BiometricSystem:
         
         self.current_session = session
         return session
+    
+    def authenticate_user(self, frame: np.ndarray) -> Optional[UserSession]:
+        """Uwierzytelnia użytkownika: wykrywa twarze, a następnie używa authenticate_user_with_results."""
+        # self._update_fps() # Przeniesiono do draw_ui
+        face_results = self.face_recognition.recognize_face(frame)
+        return self.authenticate_user_with_results(frame, face_results)
     
     def get_emotion_summary(self, user_id: str) -> Dict[str, float]:
         """Zwraca podsumowanie emocji dla danego użytkownika."""
@@ -301,6 +336,7 @@ class BiometricSystem:
         return emotion_avg
     
     def draw_ui(self, frame: np.ndarray, session: Optional[UserSession] = None) -> np.ndarray:
+        self._update_fps() # Aktualizacja FPS na początku rysowania UI
         """Rysuje interfejs użytkownika na ramce wideo."""
         img = frame.copy()
         height, width = img.shape[:2]
@@ -308,36 +344,39 @@ class BiometricSystem:
         # Tło dla paska statusu
         cv2.rectangle(img, (0, 0), (width, 40), (50, 50, 50), -1)
         
-        # FPS
+        # Przygotowanie tekstów
         fps_text = f"FPS: {self.fps:.1f}"
-        cv2.putText(img, fps_text, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 
-                   0.7, (0, 255, 0), 2)
+        
+        # Dynamiczne pozycjonowanie
+        x_offset = 10
+        y_pos = 25
+        
+        # FPS
+        _draw_text(img, fps_text, (x_offset, y_pos), 0.7, (0, 255, 0), 2)
+        (fps_w, _), _ = cv2.getTextSize(fps_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+        x_offset += fps_w + 30  # odstęp
         
         if session:
-            # Status uwierzytelnienia
             status_text = f"Status: {session.auth_state.value}"
             status_color = (0, 255, 0) if session.auth_state == AuthState.AUTHENTICATED else (0, 0, 255)
+            _draw_text(img, status_text, (x_offset, y_pos), 0.7, status_color, 2)
+            (status_w, _), _ = cv2.getTextSize(status_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+            x_offset += status_w + 30
             
-            cv2.putText(img, status_text, (150, 25), cv2.FONT_HERSHEY_SIMPLEX, 
-                       0.7, status_color, 2)
-            
-            # Informacje o użytkowniku
             user_text = f"Użytkownik: {session.user_id}"
-            cv2.putText(img, user_text, (350, 25), cv2.FONT_HERSHEY_SIMPLEX, 
-                       0.7, (255, 255, 255), 2)
+            _draw_text(img, user_text, (x_offset, y_pos), 0.7, (255, 255, 255), 2)
+            (user_w, _), _ = cv2.getTextSize(user_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+            x_offset += user_w + 30
             
-            # Jeśli wykryto emocje, wyświetl dominującą
+            # Jeśli wykryto emocje, wyświetl dominującą (po prawej stronie)
             if session.last_emotions:
                 emotion = session.last_emotions[0].emotion
                 confidence = session.last_emotions[0].confidence
                 emotion_text = f"{emotion.value}: {confidence:.1%}"
-                
-                # Kolor w zależności od emocji
                 emotion_colors = self.emotion_analyzer.get_emotion_colors()
                 color = emotion_colors.get(emotion, (255, 255, 255))
-                
-                cv2.putText(img, emotion_text, (width - 250, 25), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+                text_size, _ = cv2.getTextSize(emotion_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                _draw_text(img, emotion_text, (width - text_size[0] - 10, y_pos), 0.7, color, 2)
         
         return img
     

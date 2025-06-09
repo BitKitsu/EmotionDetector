@@ -25,8 +25,8 @@ class FaceRecognition:
         self.model = 'hog' if model is None else model
         
         # Domyślne ustawienia wykrywania twarzy
-        self.num_jitters = 2  # Zwiększona liczba losowych zaburzeń dla lepszej dokładności
-        self.upsample = 1     # Liczba razy próbkowania obrazu (większa = lepsze wykrywanie, ale wolniejsze)
+        self.num_jitters = 1  # Mniej zaburzeń, szybsze
+        self.upsample = 0     # Bez upsamplingu dla wydajności (im większa tym dokładniejsze, ale wolniejsze)
         
         # Inicjalizacja listy znanych twarzy
         self.known_face_encodings = []
@@ -194,7 +194,7 @@ class FaceRecognition:
             # Pobranie cech twarzy z dodatkowymi parametrami
             face_encodings = face_recognition.face_encodings(
                 rgb_frame, 
-                known_face_locations=[face_locations[0]],  # Tylko pierwsza twarz
+                known_face_locations=face_locations,  # Przetwarzamy wszystkie twarze
                 num_jitters=self.num_jitters,
                 model='large'  # Użyj większego modelu do lepszej dokładności
             )

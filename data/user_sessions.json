@@ -1,11 +1,1 @@
-{
-  "piotr": {
-    "user_id": "piotr",
-    "auth_state": "Uwierzytelniony",
-    "last_seen": 1749466821.4760003,
-    "confidence": 0.0,
-    "auth_attempts": 0,
-    "session_start": 1749466144.5361586,
-    "emotion_history": []
-  }
-}
+{}
