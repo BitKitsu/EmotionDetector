@@ -43,11 +43,20 @@ python main_new.py
 
 ### Opcje wiersza poleceń
 
-- `--camera ID` - Określa ID kamery (domyślnie: 0)
+- `--camera ID` - Określa ID kamery (domyślnie: -1, co oznacza wybór kamery w GUI)
 
 ## Jak korzystać
 
-1. **Rejestracja nowego użytkownika**:
+1. **Wybór kamery**:
+   - Po uruchomieniu programu bez parametrów (`python main.py`), system wykryje dostępne kamery
+   - Jeśli wykryto więcej niż jedną kamerę, wyświetli się okno wyboru kamery, w którym możesz:
+     - Używać klawiszy `n`/`p` lub strzałek lewo/prawo do przełączania między kamerami
+     - Nacisnąć `Spację` lub `Enter` aby wybrać aktywną kamerę
+     - Nacisnąć `Esc` aby anulować i wyjść z programu
+   - Jeśli wykryto tylko jedną kamerę, zostanie ona wybrana automatycznie bez wyświetlania okna wyboru
+   - Jeśli nie wykryto żadnej kamery, program zakończy działanie z komunikatem błędu
+
+2. **Rejestracja nowego użytkownika**:
    - Uruchom program
    - Naciśnij `r` aby rozpocząć rejestrację
    - Wprowadź identyfikator użytkownika

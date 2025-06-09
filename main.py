@@ -393,21 +393,111 @@ class BiometricApp:
 def parse_arguments():
     """Parsuje argumenty wiersza poleceń."""
     parser = argparse.ArgumentParser(description='System biometryczny z rozpoznawaniem twarzy i emocji.')
-    parser.add_argument('--camera', type=int, default=0, 
-                       help='ID kamery do użycia (domyślnie: 0)')
+    parser.add_argument('--camera', type=int, default=-1, 
+                       help='ID kamery do użycia. Jeśli nie podano, wyświetlone zostanie okno wyboru kamery.')
     return parser.parse_args()
+
+# -------------------------  Obsługa kamer  -------------------------
+def _detect_available_cameras(max_test: int = 6, test_read_frames: int = 3):
+    """Zwraca listę par (camera_id, przykładowa_klatka).
+
+    Kamera jest uznana za dostępną, jeśli uda się odczytać przynajmniej jedną
+    poprawną klatkę w podanej liczbie prób.  Przy wykrywaniu każda kamera jest
+    natychmiast zwalniana.
+    """
+    available = []
+    for cam_id in range(max_test):
+        cap = cv2.VideoCapture(cam_id)
+        if not cap.isOpened():
+            cap.release()
+            continue
+
+        success = False
+        frame_sample = None
+        for _ in range(test_read_frames):
+            ret, frame = cap.read()
+            if ret and frame is not None:
+                success = True
+                frame_sample = frame.copy()
+                break
+        cap.release()
+        if success:
+            available.append((cam_id, frame_sample))
+    return available
+
+
+def _select_camera_gui(available):
+    """Pozwala użytkownikowi wybrać kamerę w oknie OpenCV.
+
+    Klawisze sterujące:
+        n / strzałka w prawo – następna kamera
+        p / strzałka w lewo  – poprzednia kamera
+        Enter / spacja        – wybór
+        Esc                   – anuluj (zwraca None)
+    """
+    if not available:
+        return None
+    if len(available) == 1:
+        return available[0][0]
+
+    idx = 0
+    win_name = "Wybór kamery"
+    cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+
+    while True:
+        cam_id, frame = available[idx]
+
+        # Zmniejsz podgląd jeśli jest zbyt duży
+        display = frame.copy()
+        h, w = display.shape[:2]
+        scale = 480 / max(h, w) if max(h, w) > 480 else 1.0
+        if scale != 1.0:
+            display = cv2.resize(display, (int(w*scale), int(h*scale)))
+
+        # Pasek informacyjny
+        cv2.rectangle(display, (0, 0), (display.shape[1], 30), (0, 0, 0), -1)
+        info_text = f"Kamera ID: {cam_id}  ({idx+1}/{len(available)})  [n/p – zmień, Enter – wybierz]"
+        cv2.putText(display, info_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1)
+
+        cv2.imshow(win_name, display)
+        key = cv2.waitKey(0) & 0xFF
+
+        if key in (13, 10, 32):  # Enter lub spacja
+            cv2.destroyWindow(win_name)
+            return cam_id
+        elif key in (ord('n'), 83):  # 'n' lub strzałka w prawo
+            idx = (idx + 1) % len(available)
+        elif key in (ord('p'), 81):  # 'p' lub strzałka w lewo
+            idx = (idx - 1) % len(available)
+        elif key == 27:  # Esc
+            cv2.destroyWindow(win_name)
+            return None
+
 
 def main():
     """Główna funkcja aplikacji."""
     args = parse_arguments()
-    
+
+    camera_id = args.camera
+    if camera_id < 0:
+        # Automatyczna detekcja kamer + GUI do wyboru
+        detected = _detect_available_cameras()
+        if not detected:
+            logger.critical("Nie znaleziono żadnej działającej kamery.")
+            return 1
+
+        camera_id = _select_camera_gui(detected)
+        if camera_id is None:
+            logger.info("Przerwano wybór kamery – zamykanie aplikacji.")
+            return 0
+
     try:
-        app = BiometricApp(camera_id=args.camera)
+        app = BiometricApp(camera_id=camera_id)
         app.run()
     except Exception as e:
         logger.critical(f"Krytyczny błąd: {e}", exc_info=True)
         return 1
-    
+
     return 0
 
 if __name__ == "__main__":
