@@ -396,11 +396,22 @@ class BiometricApp(Gtk.Window):
         Gtk.main_quit()
 
 def _detect_available_cameras(max_cameras_to_check=10) -> Dict[int, Any]:
-    """Skanuje system w poszukiwaniu dostępnych kamer, używając backendu V4L2 dla lepszej kompatybilności z Linuksem."""
+    """Skanuje system w poszukiwaniu dostępnych kamer, dobierając odpowiedni backend do systemu operacyjnego."""
+    # Wybierz odpowiedni backend dla systemu operacyjnego
+    if sys.platform.startswith('linux'):
+        backend = cv2.CAP_V4L2
+        backend_name = "V4L2 (Linux)"
+    elif sys.platform == 'win32':
+        backend = cv2.CAP_DSHOW
+        backend_name = "DSHOW (Windows)"
+    else:
+        backend = cv2.CAP_ANY  # Domyślny backend dla innych systemów (np. macOS)
+        backend_name = "domyślny"
+
     available_cameras = {}
-    logger.info(f"Rozpoczynanie detekcji kamer (sprawdzanie do {max_cameras_to_check} urządzeń przy użyciu backendu V4L2)...")
+    logger.info(f"Rozpoczynanie detekcji kamer (sprawdzanie do {max_cameras_to_check} urządzeń przy użyciu backendu {backend_name})...")
     for i in range(max_cameras_to_check):
-        cap = cv2.VideoCapture(i, cv2.CAP_V4L2)
+        cap = cv2.VideoCapture(i, backend)
         if cap.isOpened():
             ret, frame = cap.read()
             if ret and frame is not None:
