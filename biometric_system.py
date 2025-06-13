@@ -8,7 +8,7 @@ from pathlib import Path
 import json
 from enum import Enum
 
-from face_utils import FaceRecognition
+from face_utils import FaceRecognition, DistanceMetric
 from emotion_analyzer import EmotionAnalyzer, EmotionType, EmotionResult
 from config import DATA_DIR, CAMERA_SETTINGS, UI_SETTINGS, EMOTION_DETECTION_SETTINGS
 
@@ -56,6 +56,7 @@ class UserSession:
     emotion_history: List[Dict[str, float]] = field(default_factory=list)
     last_emotions: List[EmotionResult] = field(default_factory=list)
     confidence: float = 0.0
+    face_results: List[Tuple[str, float, Tuple[int, int, int, int]]] = field(default_factory=list)
     auth_attempts: int = 0
     max_auth_attempts: int = 3
     session_start: float = field(default_factory=time.time)
@@ -114,20 +115,19 @@ class BiometricSystem:
         self.sessions: Dict[str, UserSession] = {}
         self.last_update_time = time.time()
         self.frame_count = 0
-        self.fps = 0
+        self.start_time = time.time()
+        self.fps = 0.0
         self.last_authentication_time = 0.0
         self.last_confirmation_increment_time = 0.0
         self.confirmation_count = 0
         self.required_confirmations = 3
         
         # Ustawienia
-        self.min_confidence = 0.5  # Minimalna pewność do rozważenia rozpoznania
         self.max_session_age = 3600  # 1 godzina w sekundach
         self.emotion_history_size = 10  # Liczba przechowywanych wyników emocji
-        self.match_threshold = 0.6  # Próg pewności dla rozpoznania (0-1)
-        self.required_confirmations = 3  # Liczba potwierdzeń potrzebnych do uwierzytelnienia
-        self.confirmation_count = 0  # Licznik potwierdzeń
-        self.last_authentication_time = 0  # Czas ostatniego udanego uwierzytelnienia
+        
+        # Inicjalizacja tolerancji w face_recognition na podstawie domyślnych progów pewności
+        self._update_face_recognition_tolerance()
         
         # Wczytanie zapisanych sesji
         self._load_sessions()
@@ -206,7 +206,7 @@ class BiometricSystem:
         
         return False
     
-    def authenticate_user_with_results(self, frame: np.ndarray, face_results: List[Tuple[str, float, Tuple[int, int, int, int]]]) -> Optional[UserSession]:
+    def authenticate_user_with_results(self, frame: np.ndarray, face_results: List[Tuple[str, float, Tuple]]) -> UserSession:
         """Uwierzytelnia użytkownika na podstawie PRZETWORZONYCH wyników rozpoznawania twarzy i emocji.
         
         Args:
@@ -214,22 +214,21 @@ class BiometricSystem:
             face_results: Lista wyników rozpoznawania twarzy.
             
         Returns:
-            Obiekt UserSession jeśli uwierzytelnienie się powiodło, None w przeciwnym wypadku.
+            Obiekt UserSession.
         """
-        # Logika funkcji authenticate_user_with_results zaczyna się tutaj:
         if not face_results:
+            # Jeśli nie ma twarzy, wyczyść bieżącą sesję, jeśli istnieje
+            if self.current_session and self.current_session.user_id != "Nieznany":
+                logger.info(f"Użytkownik {self.current_session.user_id} nie jest już widoczny. Zamykanie sesji.")
             self.current_session = None
-            return None
+            # Zwróć nową, pustą sesję, aby uniknąć zwracania None, co powoduje błędy
+            return UserSession()
         
         # Pobranie najlepszego dopasowania
         best_match = max(face_results, key=lambda x: x[1])
         user_id, confidence, (top, right, bottom, left) = best_match
         
-        # Jeśli pewność jest zbyt niska, traktuj jako nieznanego użytkownika
-        if confidence < self.min_confidence:
-            logger.debug(f"Zbyt niska pewność rozpoznania: {confidence:.2f} < {self.min_confidence}")
-            user_id = "Nieznany"
-            confidence = 0.0  # Upewnij się, że confidence jest ustawione na 0 dla nieznanego użytkownika
+
         
         # Analiza emocji
         emotion_results = self.emotion_analyzer.detect_emotions(frame)
@@ -250,40 +249,38 @@ class BiometricSystem:
         session.last_seen = current_time
         
         # Sprawdź, czy użytkownik jest już uwierzytelniony i czy sesja jest wciąż ważna
+        # Zawsze aktualizuj pewność sesji
+        session.confidence = confidence
+
+        # Sprawdź, czy użytkownik jest już uwierzytelniony i czy sesja jest wciąż ważna
         if session.auth_state == AuthState.AUTHENTICATED:
             # Sprawdź, czy sesja wygasła
             if current_time - session.last_seen > self.max_session_age:
                 session.auth_state = AuthState.UNAUTHENTICATED
                 logger.info(f"Sesja wygasła dla użytkownika: {user_id}")
-            else:
-                # Aktualizuj czas ostatnio widzianego
-                session.last_seen = current_time
-                return session
+            # Jeśli sesja jest aktywna, pewność została już zaktualizowana, więc możemy kontynuować
         
         # Logika uwierzytelniania dla nieuwierzytelnionych użytkowników
-        if confidence >= self.min_confidence and session.auth_state != AuthState.AUTHENTICATED:
-            logger.debug(f"Potencjalne dopasowanie: {user_id} (pewność: {confidence:.2f}, próg: {self.match_threshold})")
-            
-            logger.debug(f"Checking match_threshold for {user_id}: confidence={confidence:.4f}, match_threshold={self.match_threshold}")
-            if confidence >= self.match_threshold:
+        if session.auth_state != AuthState.AUTHENTICATED:
+            active_metric = self.face_recognition.metric
+            confidence_threshold = self.get_match_threshold(active_metric)
+            if confidence >= confidence_threshold:
                 self.confirmation_count += 1
-                self.last_confirmation_increment_time = current_time # Aktualizuj czas ostatniego przyrostu TUTAJ
+                self.last_confirmation_increment_time = current_time
                 logger.debug(f"Dobre dopasowanie: {self.confirmation_count}/{self.required_confirmations}")
                 
                 if self.confirmation_count >= self.required_confirmations:
                     session.auth_state = AuthState.AUTHENTICATED
-                    session.confidence = confidence
-                    session.last_seen = current_time
                     self.last_authentication_time = current_time
                     self.confirmation_count = 0
-                    self.last_confirmation_increment_time = 0.0 # Resetuj czas przyrostu
+                    self.last_confirmation_increment_time = 0.0
                     logger.info(f"Użytkownik {user_id} pomyślnie uwierzytelniony (pewność: {confidence:.2f})")
             else:
                 # Resetuj licznik jeśli pewność spadnie poniżej progu
                 if self.confirmation_count > 0:
                     logger.debug("Resetowanie licznika potwierdzeń - zbyt niska pewność")
                     self.confirmation_count = 0
-                    self.last_confirmation_increment_time = 0.0 # Resetuj czas przyrostu
+                    self.last_confirmation_increment_time = 0.0
         
         # Resetuj licznik potwierdzeń, jeśli sekwencja utknęła (brak postępu)
         if 0 < self.confirmation_count < self.required_confirmations:
@@ -303,21 +300,63 @@ class BiometricSystem:
         self.current_session = session
         return session
     
-    def authenticate_user(self, frame: np.ndarray) -> Optional[UserSession]:
+    def _update_fps(self):
+        """Aktualizuje licznik FPS."""
+        self.frame_count += 1
+        elapsed_time = time.time() - self.start_time
+        if elapsed_time >= 1.0:
+            self.fps = self.frame_count / elapsed_time
+            self.frame_count = 0
+            self.start_time = time.time()
+
+    def authenticate_user(self, frame: np.ndarray) -> UserSession:
         """Uwierzytelnia użytkownika: wykrywa twarze, a następnie używa authenticate_user_with_results."""
-        # self._update_fps() # Przeniesiono do draw_ui
-        face_results = self.face_recognition.recognize_face(frame)
-        return self.authenticate_user_with_results(frame, face_results)
-    
+        self._update_fps()
+        # Optymalizacja: skalowanie klatki przed detekcją
+        small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+        face_results_small = self.face_recognition.recognize_face(small_frame)
+
+        # Przeskaluj wyniki z powrotem do oryginalnego rozmiaru klatki
+        face_results = []
+        if face_results_small:
+            for name, conf, (top_s, right_s, bottom_s, left_s) in face_results_small:
+                top = int(top_s * 2)
+                right = int(right_s * 2)
+                bottom = int(bottom_s * 2)
+                left = int(left_s * 2)
+
+                face_results.append((name, conf, (top, right, bottom, left)))
+
+        session = self.authenticate_user_with_results(frame, face_results)
+        session.face_results = face_results
+        return session
+
+    def _update_face_recognition_tolerance(self):
+        """Aktualizuje tolerancję w module face_recognition na podstawie aktywnej metryki."""
+        active_metric = self.face_recognition.metric
+        new_tolerance = self.get_match_threshold(active_metric)
+        self.face_recognition.set_tolerance(active_metric, new_tolerance)
+
+    def set_match_threshold(self, metric: DistanceMetric, value: float):
+        """Ustawia próg tolerancji dla danej metryki w systemie rozpoznawania twarzy."""
+        self.face_recognition.set_tolerance(metric, value)
+
+    def get_match_threshold(self, metric: DistanceMetric) -> float:
+        """Pobiera próg tolerancji dla danej metryki z systemu rozpoznawania twarzy."""
+        return self.face_recognition.get_tolerance(metric)
+
+    def toggle_metric(self) -> 'DistanceMetric':
+        """Przełącza metrykę porównywania twarzy i aktualizuje tolerancję."""
+        new_metric = self.face_recognition.toggle_metric()
+        self._update_face_recognition_tolerance()  # Zaktualizuj tolerancję dla nowej metryki
+        logger.info(f"Zmieniono metrykę na: {new_metric.value}")
+        return new_metric
+
     def get_emotion_summary(self, user_id: str) -> Dict[str, float]:
         """Zwraca podsumowanie emocji dla danego użytkownika."""
         if user_id not in self.sessions:
             return {}
-        
         session = self.sessions[user_id]
-        if not session.emotion_history:
-            return {}
-        
         # Oblicz średnie wartości emocji
         emotion_sums = {}
         for emotions in session.emotion_history:
@@ -336,48 +375,57 @@ class BiometricSystem:
         return emotion_avg
     
     def draw_ui(self, frame: np.ndarray, session: Optional[UserSession] = None) -> np.ndarray:
-        self._update_fps() # Aktualizacja FPS na początku rysowania UI
+        self._update_fps()
         """Rysuje interfejs użytkownika na ramce wideo."""
         img = frame.copy()
         height, width = img.shape[:2]
-        
+
         # Tło dla paska statusu
         cv2.rectangle(img, (0, 0), (width, 40), (50, 50, 50), -1)
-        
-        # Przygotowanie tekstów
-        fps_text = f"FPS: {self.fps:.1f}"
-        
+
         # Dynamiczne pozycjonowanie
         x_offset = 10
         y_pos = 25
-        
+
         # FPS
+        fps_text = f"FPS: {self.fps:.1f}"
         _draw_text(img, fps_text, (x_offset, y_pos), 0.7, (0, 255, 0), 2)
         (fps_w, _), _ = cv2.getTextSize(fps_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-        x_offset += fps_w + 30  # odstęp
-        
+        x_offset += fps_w + 30
+
         if session:
             status_text = f"Status: {session.auth_state.value}"
             status_color = (0, 255, 0) if session.auth_state == AuthState.AUTHENTICATED else (0, 0, 255)
             _draw_text(img, status_text, (x_offset, y_pos), 0.7, status_color, 2)
             (status_w, _), _ = cv2.getTextSize(status_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
             x_offset += status_w + 30
-            
+
             user_text = f"Użytkownik: {session.user_id}"
             _draw_text(img, user_text, (x_offset, y_pos), 0.7, (255, 255, 255), 2)
             (user_w, _), _ = cv2.getTextSize(user_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
             x_offset += user_w + 30
             
+            # Wyświetlanie pewności, jeśli użytkownik jest uwierzytelniony
+            if session.auth_state == AuthState.AUTHENTICATED and session.user_id != "Nieznany":
+                confidence_text = f"Pewnosc: {session.confidence:.2f}"
+                _draw_text(img, confidence_text, (x_offset, y_pos), 0.7, (0, 255, 255), 2)
+                (conf_w, _), _ = cv2.getTextSize(confidence_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                x_offset += conf_w + 30
+
             # Jeśli wykryto emocje, wyświetl dominującą (po prawej stronie)
             if session.last_emotions:
                 emotion = session.last_emotions[0].emotion
-                confidence = session.last_emotions[0].confidence
-                emotion_text = f"{emotion.value}: {confidence:.1%}"
+                emotion_confidence = session.last_emotions[0].confidence
+                emotion_text = f"{emotion.value}: {emotion_confidence:.1%}"
                 emotion_colors = self.emotion_analyzer.get_emotion_colors()
                 color = emotion_colors.get(emotion, (255, 255, 255))
                 text_size, _ = cv2.getTextSize(emotion_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
                 _draw_text(img, emotion_text, (width - text_size[0] - 10, y_pos), 0.7, color, 2)
-        
+
+        # Wyświetlanie aktualnej metryki
+        metric_text = f"Metryka: {self.face_recognition.metric.value.capitalize()} (M)"
+        _draw_text(img, metric_text, (10, height - 15), 0.6, (255, 255, 0), 2)
+
         return img
     
     def cleanup(self) -> None:

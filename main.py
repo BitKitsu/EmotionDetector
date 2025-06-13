@@ -1,504 +1,477 @@
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GLib, GdkPixbuf
 import cv2
 import numpy as np
-import sys
+from typing import Optional, Dict, Any
 import logging
 from pathlib import Path
-import argparse
-from typing import Optional, Dict, Any
+from threading import Thread, Lock
+import sys
 
-from config import LOG_CONFIG, CAMERA_SETTINGS
+from face_utils import FaceRecognition, DistanceMetric
+from emotion_analyzer import EmotionAnalyzer
 from biometric_system import BiometricSystem, UserSession, AuthState
-from face_utils import FaceRecognition
+from config import LOG_CONFIG
 import logging.config
 
 # Konfiguracja logowania
 logging.config.dictConfig(LOG_CONFIG)
+
 logger = logging.getLogger(__name__)
 
-# Parametry optymalizacji wydajności
-SKIP_FRAMES = 4        # wykonuj detekcję co 5. klatkę
-SCALE_FACTOR = 0.5     # skala obrazu przy detekcji
+# --- Wątek do przechwytywania klatek i rozpoznawania twarzy ---
+class CaptureThread(Thread):
+    """Oddzielny wątek pobierający klatki z kamery i wykonujący rozpoznawanie.
 
-class BiometricApp:
-    def __init__(self, camera_id: int = 0):
-        """Inicjalizacja aplikacji biometrycznej.
-        
-        Args:
-            camera_id: ID kamery do użycia
-        """
+    Dzięki temu główny wątek GTK pozostaje responsywny."""
+
+    def __init__(self, system: 'BiometricSystem', camera_id: int = 0):
+        super().__init__(daemon=True)
+        self.system = system
         self.camera_id = camera_id
-        self.cap = None
-        self.biometric_system = BiometricSystem()
-        self.face_recognition = FaceRecognition()
-        self.running = False
-        self.current_user: Optional[UserSession] = None
-        # Parametry wydajności
-        self.skip_frames = SKIP_FRAMES
-        self.scale_factor = SCALE_FACTOR
-        self.frame_idx = 0
-        self.face_results_for_drawing = []  # Przechowuje (name, conf, scaled_location) do rysowania na pełnej klatce
-        
-        # Inicjalizacja interfejsu użytkownika
-        self.window_name = "System Biometryczny"
-        cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(self.window_name, 1280, 720)
-    
-    def initialize_camera(self) -> bool:
-        """Inicjalizuje kamerę.
-        
-        Returns:
-            bool: True jeśli inicjalizacja się powiodła, False w przeciwnym wypadku
-        """
-        try:
-            self.cap = cv2.VideoCapture(self.camera_id)
-            if not self.cap.isOpened():
-                logger.error(f"Nie można otworzyć kamery o ID: {self.camera_id}")
-                return False
-            
-            # Ustawienie rozdzielczości kamery
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_SETTINGS['width'])
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_SETTINGS['height'])
-            self.cap.set(cv2.CAP_PROP_FPS, CAMERA_SETTINGS['fps'])
-            
-            logger.info(f"Kamera zainicjalizowana. Rozdzielczość: {self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)}x{self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Błąd podczas inicjalizacji kamery: {e}")
-            return False
-    
-    def process_frame(self, frame: cv2.Mat) -> cv2.Mat:
-        # Import _draw_text once if needed for this method, or ensure it's available
-        # For drawing face boxes, it's done after biometric_system.draw_ui
-        try:
-            _draw_text_fn = self.biometric_system._draw_text # Access via instance
-        except AttributeError:
-            # Fallback or log if _draw_text is not found, though it should be part of BiometricSystem
-            _draw_text_fn = lambda img, text, pos, scale, color, thick: cv2.putText(img, text.encode('ascii', 'ignore').decode('ascii'), pos, cv2.FONT_HERSHEY_SIMPLEX, scale, color, thick)
-
-        """Przetwarza pojedynczą klatkę wideo.
-        
-        Args:
-            frame: Klatka wideo do przetworzenia
-            
-        Returns:
-            Przetworzona klatka
-        """
-        try:
-            if self.frame_idx % (self.skip_frames + 1) == 0:
-                small_frame = cv2.resize(frame, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
-                # Rozpoznaj twarze na małej klatce RAZ
-                face_results_small = self.face_recognition.recognize_face(small_frame)
-
-                # Przekaż wyniki do systemu biometrycznego (który nie będzie już sam wywoływał recognize_face)
-                self.current_user = self.biometric_system.authenticate_user_with_results(small_frame, face_results_small)
-
-                # Przygotuj wyniki do rysowania na pełnej klatce
-                self.face_results_for_drawing = []
-                if face_results_small:
-                    for name, conf, (top_s, right_s, bottom_s, left_s) in face_results_small:
-                        scale_inv = 1.0 / self.scale_factor
-                        top = int(top_s * scale_inv)
-                        right = int(right_s * scale_inv)
-                        bottom = int(bottom_s * scale_inv)
-                        left = int(left_s * scale_inv)
-                        self.face_results_for_drawing.append((name, conf, (top, right, bottom, left)))
-            self.frame_idx += 1
-
-            # Narysuj główny interfejs użytkownika (pasek statusu, FPS itp.)
-            # Ta metoda NIE powinna już rysować ramek wokół twarzy, to zrobimy poniżej
-            processed_frame = self.biometric_system.draw_ui(frame.copy(), self.current_user) # Działaj na kopii
-
-            # Rysuj prostokąty oraz etykiety twarzy na klatce z UI
-            if self.face_results_for_drawing:
-                for name, conf, (top, right, bottom, left) in self.face_results_for_drawing:
-                    color = (0, 255, 0) if name != "Nieznany" else (0, 0, 255)
-                    cv2.rectangle(processed_frame, (left, top), (right, bottom), color, 2)
-                    # Użyj _draw_text_fn zdefiniowanego na początku metody
-                    _draw_text_fn(processed_frame, name, (left, max(20, top - 10)), 0.7, color, 2)
-            frame = processed_frame # Zaktualizuj oryginalną klatkę
-            
-            return frame
-            
-        except Exception as e:
-            logger.error(f"Błąd podczas przetwarzania klatki: {e}", exc_info=True)
-            return frame
-    
-    def register_user(self) -> None:
-        """Rejestruje nowego użytkownika."""
-        try:
-            # Dostęp do _draw_text przez instancję BiometricSystem, jeśli jest tam jako metoda lub atrybut publiczny
-            # lub zaimportuj bezpośrednio, jeśli jest to funkcja na poziomie modułu biometric_system
-            _draw_text_fn = self.biometric_system._draw_text 
-        except AttributeError:
-            # Fallback, jeśli _draw_text nie jest dostępny przez self.biometric_system
-            # To sugeruje, że _draw_text powinien być importowany inaczej lub udostępniony
-            import importlib
-            biometric_system_module = importlib.import_module('biometric_system')
-            _draw_text_fn = biometric_system_module._draw_text
-
-        
-        if not self.cap or not self.cap.isOpened():
-            logger.error("Kamera nie jest dostępna do rejestracji.")
-            return
-        
-        # Tworzymy okno do wprowadzania tekstu
-        user_id = ""
-        input_active = True
-        
-        try:
-            while input_active:
-                ret, frame = self.cap.read()
-                if not ret:
-                    logger.error("Nie można odczytać klatki z kamery.")
-                    break
-
-                display_frame = frame.copy()
-                small_frame = cv2.resize(frame, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
-                
-                # Użyj recognize_face na małej klatce do feedbacku UI
-                # To jest wolniejsze niż face_locations, ale daje spójność z główną pętlą
-                face_results_small = self.face_recognition.recognize_face(small_frame)
-                
-                face_detected_on_small = False # Resetuj flagę dla każdej klatki
-                if face_results_small:
-                    face_detected_on_small = True
-                    for _name, _conf, (top_s, right_s, bottom_s, left_s) in face_results_small:
-                        # Skaluj koordynaty do rysowania na display_frame (pełna rozdzielczość)
-                        scale_inv = 1.0 / self.scale_factor
-                        top = int(top_s * scale_inv)
-                        right = int(right_s * scale_inv)
-                        bottom = int(bottom_s * scale_inv)
-                        left = int(left_s * scale_inv)
-                        cv2.rectangle(display_frame, (left, top), (right, bottom), (0, 255, 0), 2)
-                        # Można dodać etykietę tymczasową, np. "Potencjalna twarz"
-                        # _draw_text_fn(display_frame, "Twarz?", (left, max(20, top - 10)), 0.6, (0,255,0), 1)
-                
-                # Rysujemy interfejs na display_frame
-                overlay = display_frame.copy()
-                cv2.rectangle(overlay, (0, 0), (display_frame.shape[1], 110), (50, 50, 50), -1)
-                alpha = 0.6
-                cv2.addWeighted(overlay, alpha, display_frame, 1 - alpha, 0, display_frame)
-                
-                _draw_text_fn(display_frame, "Wprowadź identyfikator użytkownika:", (10, 30), 0.7, (255, 255, 255), 2)
-                _draw_text_fn(display_frame, user_id, (10, 70), 1.0, (0, 255, 0), 2)
-                _draw_text_fn(display_frame, "Enter — zatwierdź, ESC — anuluj", (10, 100), 0.55, (200, 200, 200), 1)
-                
-                cv2.imshow(self.window_name, display_frame)
-                
-                key = cv2.waitKey(1) & 0xFF
-                
-                if key == 13:  # Enter
-                    if user_id.strip():
-                        input_active = False
-                        break
-                elif key == 27:  # ESC
-                    logger.info("Anulowano wprowadzanie identyfikatora.")
-                    return
-                elif key == 8:  # Backspace
-                    user_id = user_id[:-1]
-                elif 32 <= key <= 126:  # Znaki drukowalne
-                    user_id += chr(key)
-        
-        except Exception as e:
-            logger.error(f"Błąd podczas wprowadzania identyfikatora: {e}")
-            return
-        
-        # Po wprowadzeniu identyfikatora sprawdź unikalność
-        if not input_active and user_id.strip() and user_id in self.face_recognition.get_registered_users(): # Sprawdź po zakończeniu wpisywania
-            logger.warning(f"Użytkownik '{user_id}' już istnieje w bazie. Anulowanie rejestracji.")
-            # Potrzebujemy klatki do wyświetlenia komunikatu
-            temp_frame_for_msg = self.cap.read()[1] if self.cap and self.cap.isOpened() else np.zeros((480, 640, 3), dtype=np.uint8)
-            if temp_frame_for_msg is not None:
-                _draw_text_fn(temp_frame_for_msg, "Użytkownik już istnieje!", (10, 150), 0.8, (0,0,255), 2)
-                cv2.imshow(self.window_name, temp_frame_for_msg)
-                cv2.waitKey(2000)
-            return
-        
-        # Teraz przechodzimy do rejestracji twarzy
-        logger.info(f"Rozpoczęcie rejestracji użytkownika: {user_id}")
-        
-        face_detected_on_small = False
-        registration_capture_active = True
-        try:
-            while registration_capture_active:
-                ret, frame_full_res = self.cap.read()
-                if not ret:
-                    logger.error("Nie można odczytać klatki z kamery podczas rejestracji.")
-                    break
-
-                display_frame = frame_full_res.copy()
-                small_frame = cv2.resize(frame_full_res, (0, 0), fx=self.scale_factor, fy=self.scale_factor)
-                
-                # Użyj recognize_face na małej klatce do feedbacku UI
-                # To jest wolniejsze niż face_locations, ale daje spójność z główną pętlą
-                face_results_small = self.face_recognition.recognize_face(small_frame)
-                
-                face_detected_on_small = False # Resetuj flagę dla każdej klatki
-                if face_results_small:
-                    face_detected_on_small = True
-                    for _name, _conf, (top_s, right_s, bottom_s, left_s) in face_results_small:
-                        # Skaluj koordynaty do rysowania na display_frame (pełna rozdzielczość)
-                        scale_inv = 1.0 / self.scale_factor
-                        top = int(top_s * scale_inv)
-                        right = int(right_s * scale_inv)
-                        bottom = int(bottom_s * scale_inv)
-                        left = int(left_s * scale_inv)
-                        cv2.rectangle(display_frame, (left, top), (right, bottom), (0, 255, 0), 2)
-                        # Można dodać etykietę tymczasową, np. "Potencjalna twarz"
-                        # _draw_text_fn(display_frame, "Twarz?", (left, max(20, top - 10)), 0.6, (0,255,0), 1)
-                
-                # Rysujemy interfejs na display_frame
-                overlay = display_frame.copy()
-                cv2.rectangle(overlay, (0, 0), (display_frame.shape[1], 110), (50, 50, 50), -1)
-                alpha = 0.6
-                cv2.addWeighted(overlay, alpha, display_frame, 1 - alpha, 0, display_frame)
-                
-                _draw_text_fn(display_frame, f"Rejestracja: {user_id}", (10, 30), 0.7, (255, 255, 255), 2)
-                
-                if face_detected_on_small:
-                    _draw_text_fn(display_frame, "Twarz wykryta! Naciśnij SPACJĘ, aby zrobić zdjęcie", (10, 70), 0.65, (0, 255, 0), 2)
-                else:
-                    _draw_text_fn(display_frame, "Zbliż się do kamery i upewnij się, że Twoja twarz jest widoczna", (10, 70), 0.65, (0, 0, 255), 2)
-                
-                _draw_text_fn(display_frame, "ESC — anuluj", (10, 100), 0.55, (200, 200, 200), 1)
-                
-                cv2.imshow(self.window_name, display_frame)
-                
-                key = cv2.waitKey(1) & 0xFF
-                
-                if key == 32 and face_detected_on_small:  # SPACJA -> zapis zdjęcia
-                    # Użyj frame_full_res do rejestracji dla lepszej jakości
-                    registered = self.face_recognition.register_face(frame_full_res, user_id)
-                    if registered:
-                        _draw_text_fn(display_frame, "Zarejestrowano pomyślnie!", (10, 140), 0.8, (0,255,0), 2)
-                        cv2.imshow(self.window_name, display_frame)
-                        cv2.waitKey(2000)
-                        registration_capture_active = False # Zakończ pętlę rejestracji
-                    else:
-                        # Komunikat o nieudanej rejestracji (np. duplikat wg. face_utils lub inny błąd)
-                        _draw_text_fn(display_frame, "Rejestracja nieudana.", (10, 140), 0.8, (0,0,255), 2)
-                        cv2.imshow(self.window_name, display_frame)
-                        cv2.waitKey(2000)
-                        registration_capture_active = False # Zakończ pętlę rejestracji
-                
-                elif key == 27:  # ESC
-                    logger.info("Anulowano rejestrację przez użytkownika.")
-                    registration_capture_active = False # Zakończ pętlę rejestracji
-
-                    
-        except Exception as e:
-            logger.error(f"Błąd podczas rejestracji użytkownika: {e}", exc_info=True)
-    
-    def list_users(self) -> None:
-        """Wyświetla listę zarejestrowanych użytkowników w osobnym oknie OpenCV."""
-        import importlib
-        biometric_system = importlib.import_module('biometric_system')
-        _draw_text = biometric_system._draw_text
-        users = sorted(self.face_recognition.get_registered_users())
-        showing_list = True
-        win_name = "Użytkownicy"
-
-        # Okno o stałym rozmiarze
-        width, height = 400, 600
-        cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(win_name, width, height)
-
-        while showing_list:
-            # Czarne tło
-            display_frame = np.zeros((height, width, 3), dtype=np.uint8)
-
-            # Panel tytułu
-            cv2.rectangle(display_frame, (0, 0), (width, 60), (60, 10, 10), -1)
-            _draw_text(display_frame, "Zarejestrowani użytkownicy:", (15, 40), 0.9, (255,255,255), 2)
-            cv2.line(display_frame, (10, 55), (width-10, 55), (110, 40, 40), 1)
-
-            # Lista użytkowników
-            if not users:
-                _draw_text(display_frame, "Brak zarejestrowanych użytkowników", (15, 100), 0.7, (200,200,200), 1)
-            else:
-                max_users_visible = (height-150)//32
-                start_idx = 0
-                for i in range(start_idx, min(start_idx+max_users_visible, len(users))):
-                    y_pos = 100 + (i-start_idx)*32
-                    user_text = f"{i+1}. {users[i]}"
-                    # Pasek podświetlenia dla pierwszego (możesz rozbudować o wybór)
-                    if i == 0:
-                        cv2.rectangle(display_frame, (8, y_pos-22), (width-8, y_pos+8), (80,50,50), -1)
-                    _draw_text(display_frame, user_text, (20, y_pos), 0.75, (240,240,255), 2)
-            # Stopka
-            cv2.rectangle(display_frame, (0, height-50), (width, height), (40,40,60), -1)
-            _draw_text(display_frame, f"Liczba użytkowników: {len(users)}", (15, height-20), 0.65, (180,180,255), 1)
-            _draw_text(display_frame, "ESC - powrót", (width-140, height-20), 0.6, (150,150,255), 1)
-
-            cv2.imshow(win_name, display_frame)
-            key = cv2.waitKey(20) & 0xFF
-            if key == 27:
-                showing_list = False
-                cv2.destroyWindow(win_name)
-                break
-    
-    def run(self) -> None:
-        """Uruchamia główną pętlę aplikacji."""
-        if not self.initialize_camera():
-            logger.error("Nie można uruchomić aplikacji z powodu błędu kamery.")
-            return
-        
         self.running = True
-        logger.info("Aplikacja uruchomiona. Naciśnij 'q', aby zakończyć.")
-        
-        try:
-            while self.running:
-                # Odczytaj klatkę z kamery
-                ret, frame = self.cap.read()
-                if not ret:
-                    logger.error("Nie można odczytać klatki z kamery.")
-                    break
-                
-                # Przetwórz klatkę
-                processed_frame = self.process_frame(frame)
-                
-                # Wyświetl wynik
-                cv2.imshow(self.window_name, processed_frame)
-                
-                # Obsługa klawiszy
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord('q'):  # Wyjście
-                    self.running = False # Ustaw flagę, aby wyjść z pętli
-                elif key == ord('r'):  # Rejestracja nowego użytkownika
-                    self.register_user()
-                elif key == ord('l'):  # Lista zarejestrowanych użytkowników
-                    self.list_users()
-                
-        except KeyboardInterrupt:
-            logger.info("Zatrzymywanie aplikacji przez KeyboardInterrupt...")
-            self.running = False # Upewnij się, że pętla się zakończy
-        except Exception as e:
-            logger.error(f"Wystąpił błąd w pętli głównej: {e}", exc_info=True)
-            self.running = False # Upewnij się, że pętla się zakończy
-        finally:
-            self.cleanup()
+        self.frame_lock = Lock()
+        self.latest_frame: Optional[np.ndarray] = None
+        self.latest_session: Optional[UserSession] = None
 
-    def cleanup(self) -> None:
-        """Zwalnia zasoby."""
+    def run(self):
+        cap = cv2.VideoCapture(self.camera_id)
+        while self.running:
+            ret, frame = cap.read()
+            if not ret:
+                continue
+            # Wykonaj rozpoznawanie w tym wątku
+            session = self.system.authenticate_user(frame)
+            # Zapisz wyniki w sposób bezpieczny wątkowo
+            with self.frame_lock:
+                self.latest_frame = frame
+                self.latest_session = session
+        cap.release()
+
+    def stop(self):
         self.running = False
+
+
+class BiometricApp(Gtk.Window):
+    def __init__(self, camera_id: int = 0, width=1280, height=720):
+        super().__init__(title="System biometryczny")
+        self.set_default_size(width, height)
+        self.camera_id = camera_id
         
-        if self.cap and self.cap.isOpened():
-            self.cap.release()
+        # Inicjalizacja systemu biometrycznego
+        self.system = BiometricSystem()
         
-        self.biometric_system.cleanup()
-        cv2.destroyAllWindows()
-        logger.info("Aplikacja zakończyła działanie.")
+        # Główne kontenery
+        self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.add(self.main_box)
+        
+        # Górny pasek z przyciskami
+        self.create_header_bar()
+        
+        # Główny obszar z kamerą i informacjami
+        self.content_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.main_box.pack_start(self.content_box, True, True, 0)
+        
+        # Panel kamery
+        self.camera_area = Gtk.DrawingArea()
+        self.camera_area.set_size_request(800, 600)
+        self.camera_area.connect("draw", self.on_draw_camera)
+        self.content_box.pack_start(self.camera_area, True, True, 0)
+        self.last_pixbuf = None
+        
+        # Panel informacyjny
+        self.info_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.info_box.set_size_request(300, -1)
+        self.content_box.pack_start(self.info_box, False, False, 0)
+        
+        # Informacje o użytkowniku
+        self.user_info_frame = Gtk.Frame(label="Informacje o użytkowniku")
+        self.user_info_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5, margin=10)
+        self.user_info_frame.add(self.user_info_box)
+        self.info_box.pack_start(self.user_info_frame, False, False, 0)
+        
+        self.status_label = Gtk.Label(label="Status: Niezalogowany")
+        self.user_label = Gtk.Label(label="Użytkownik: -")
+        self.confidence_label = Gtk.Label(label="Pewność: -")
+        self.metric_label = Gtk.Label(label="Metryka: Kosinusowa")
+        self.fps_label = Gtk.Label(label="FPS: -")
+        
+        for widget in [self.status_label, self.user_label, self.confidence_label, self.metric_label, self.fps_label]:
+            self.user_info_box.pack_start(widget, False, False, 5)
+        
+        # Przycisk zmiany metryki
+        self.metric_button = Gtk.Button(label="Zmień metrykę na Euklidesową")
+        self.metric_button.connect("clicked", self.on_metric_button_clicked)
+        self.info_box.pack_start(self.metric_button, False, False, 10)
 
-def parse_arguments():
-    """Parsuje argumenty wiersza poleceń."""
-    parser = argparse.ArgumentParser(description='System biometryczny z rozpoznawaniem twarzy i emocji.')
-    parser.add_argument('--camera', type=int, default=-1, 
-                       help='ID kamery do użycia. Jeśli nie podano, wyświetlone zostanie okno wyboru kamery.')
-    return parser.parse_args()
+        # Kontrolki do zmiany progów pewności
+        self.confidence_frame = Gtk.Frame(label="Ustawienia progów pewności")
+        self.confidence_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5, margin=10)
+        self.confidence_frame.add(self.confidence_box)
+        self.info_box.pack_start(self.confidence_frame, False, False, 10)
 
-# -------------------------  Obsługa kamer  -------------------------
-def _detect_available_cameras(max_test: int = 6, test_read_frames: int = 3):
-    """Zwraca listę par (camera_id, przykładowa_klatka).
+        # Próg pewności dla metryki kosinusowej
+        cosine_hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        cosine_label = Gtk.Label(label="Pewność (Kosinus):")
+        self.cosine_spin = Gtk.SpinButton.new_with_range(0.0, 1.0, 0.01)
+        cosine_tolerance = self.system.get_match_threshold(DistanceMetric.COSINE)
+        self.cosine_spin.set_value(1.0 - cosine_tolerance)
+        self.cosine_spin.connect("value-changed", self._on_confidence_threshold_changed, DistanceMetric.COSINE)
+        cosine_hbox.pack_start(cosine_label, False, False, 0)
+        cosine_hbox.pack_start(self.cosine_spin, True, True, 0)
+        self.confidence_box.pack_start(cosine_hbox, False, False, 0)
 
-    Kamera jest uznana za dostępną, jeśli uda się odczytać przynajmniej jedną
-    poprawną klatkę w podanej liczbie prób.  Przy wykrywaniu każda kamera jest
-    natychmiast zwalniana.
-    """
-    available = []
-    for cam_id in range(max_test):
-        cap = cv2.VideoCapture(cam_id)
-        if not cap.isOpened():
-            cap.release()
-            continue
+        # Próg pewności dla metryki euklidesowej
+        euclidean_hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        euclidean_label = Gtk.Label(label="Pewność (Euklides):")
+        self.euclidean_spin = Gtk.SpinButton.new_with_range(0.0, 1.0, 0.01)
+        euclidean_tolerance = self.system.get_match_threshold(DistanceMetric.EUCLIDEAN)
+        self.euclidean_spin.set_value(1.0 - euclidean_tolerance)
+        self.euclidean_spin.connect("value-changed", self._on_confidence_threshold_changed, DistanceMetric.EUCLIDEAN)
+        euclidean_hbox.pack_start(euclidean_label, False, False, 0)
+        euclidean_hbox.pack_start(self.euclidean_spin, True, True, 0)
+        self.confidence_box.pack_start(euclidean_hbox, False, False, 0)
+        
+        # Obszar na emocje
+        self.emotion_frame = Gtk.Frame(label="Emocje")
+        self.emotion_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5, margin=10)
+        self.emotion_frame.add(self.emotion_box)
+        self.info_box.pack_start(self.emotion_frame, False, False, 10)
+        
+        self.emotion_label = Gtk.Label(label="Dominująca emocja: -")
+        self.emotion_confidence_label = Gtk.Label(label="Pewność: -")
+        
+        for widget in [self.emotion_label, self.emotion_confidence_label]:
+            self.emotion_box.pack_start(widget, False, False, 5)
+        
+        # Uruchom wątek kamery
+        self.capture_thread = CaptureThread(self.system, self.camera_id)
+        self.capture_thread.start()
+        
+        # Rozpocznij okresowe odświeżanie UI
+        self.timeout_id = GLib.timeout_add(30, self.update_ui)  # ~33 FPS
+        
+        # Połączenie sygnałów
+        self.connect("destroy", self.on_destroy)
 
-        success = False
-        frame_sample = None
-        for _ in range(test_read_frames):
+    def _on_confidence_threshold_changed(self, spin_button, metric):
+        """Obsługuje zmianę wartości progu pewności w SpinButton."""
+        new_confidence = spin_button.get_value()
+        # Konwertuj pewność (0-1) na tolerancję (odległość)
+        new_tolerance = 1.0 - new_confidence
+        self.system.set_match_threshold(metric, new_tolerance)
+
+    def on_draw_camera(self, widget, cr):
+        """Rysuje klatkę z kamery na DrawingArea z zachowaniem proporcji."""
+        if self.last_pixbuf is None:
+            return
+
+        alloc = widget.get_allocation()
+        pixbuf_w = self.last_pixbuf.get_width()
+        pixbuf_h = self.last_pixbuf.get_height()
+
+        scale_w = alloc.width / pixbuf_w
+        scale_h = alloc.height / pixbuf_h
+        scale = min(scale_w, scale_h)
+
+        target_w = int(pixbuf_w * scale)
+        target_h = int(pixbuf_h * scale)
+
+        x_offset = (alloc.width - target_w) // 2
+        y_offset = (alloc.height - target_h) // 2
+
+        scaled_pixbuf = self.last_pixbuf.scale_simple(
+            target_w, target_h, GdkPixbuf.InterpType.BILINEAR
+        )
+
+        Gdk.cairo_set_source_pixbuf(cr, scaled_pixbuf, x_offset, y_offset)
+        cr.paint()
+
+    def create_header_bar(self):
+        header = Gtk.HeaderBar()
+        header.set_show_close_button(True)
+        header.props.title = "System biometryczny"
+        self.set_titlebar(header)
+        
+        # Przycisk rejestracji
+        self.register_button = Gtk.Button(label="Zarejestruj użytkownika")
+        self.register_button.connect("clicked", self.on_register_clicked)
+        self.register_button.set_sensitive(False)  # Wyłącz na starcie
+        header.pack_start(self.register_button)
+        
+        # Przycisk listy użytkowników
+        self.users_btn = Gtk.Button(label="Lista użytkowników")
+        self.users_btn.connect("clicked", self.on_users_clicked)
+        header.pack_start(self.users_btn)
+        
+    def on_metric_button_clicked(self, button):
+        self.system.toggle_metric()
+        current_metric = self.system.face_recognition.metric
+        if current_metric == DistanceMetric.EUCLIDEAN:
+            self.metric_button.set_label("Zmień metrykę na Kosinusową")
+            self.metric_label.set_text("Metryka: Euklidesowa")
+        else:
+            self.metric_button.set_label("Zmień metrykę na Euklidesową")
+            self.metric_label.set_text("Metryka: Kosinusowa")
+    
+    def update_ui(self):
+        # Odczytaj najnowszą klatkę z wątku kamery
+        frame = None
+        session = None
+        with self.capture_thread.frame_lock:
+            if self.capture_thread.latest_frame is not None:
+                frame = self.capture_thread.latest_frame.copy()
+                session = self.capture_thread.latest_session
+
+        if frame is not None:
+            # Włącz przycisk rejestracji, gdy kamera jest gotowa
+            if not self.register_button.get_sensitive():
+                self.register_button.set_sensitive(True)
+            # Aktualizacja interfejsu
+            if session and session.face_results:
+                # Rysowanie ramek i etykiet na klatce
+                for name, conf, (top, right, bottom, left) in session.face_results:
+                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                    label = f"{name} ({conf:.2f})"
+                    cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+                self.status_label.set_text(f"Status: {session.auth_state.value}")
+                self.user_label.set_text(f"Użytkownik: {session.user_id}")
+                self.confidence_label.set_text(f"Pewność: {session.confidence:.2f}")
+                if session.last_emotions:
+                    emotion = session.last_emotions[0].emotion
+                    confidence = session.last_emotions[0].confidence
+                    self.emotion_label.set_text(f"Dominująca emocja: {emotion.value}")
+                    self.emotion_confidence_label.set_text(f"Pewność: {confidence:.1%}")
+                else:
+                    self.emotion_label.set_text("Dominująca emocja: -")
+                    self.emotion_confidence_label.set_text("Pewność: -")
+            else:
+                # Resetuj etykiety, jeśli nie wykryto twarzy
+                self.status_label.set_text("Status: Niezalogowany")
+                self.user_label.set_text("Użytkownik: -")
+                self.confidence_label.set_text("Pewność: -")
+                self.emotion_label.set_text("Dominująca emocja: -")
+                self.emotion_confidence_label.set_text("Pewność: -")
+
+            # Zawsze aktualizuj FPS
+            self.fps_label.set_text(f"FPS: {self.system.fps:.2f}")
+
+            # Konwersja klatki do formatu GTK
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            height, width = frame.shape[:2]
+            pixbuf = GdkPixbuf.Pixbuf.new_from_data(
+                frame.tobytes(),
+                GdkPixbuf.Colorspace.RGB,
+                False,
+                8,
+                width,
+                height,
+                width * 3,
+                None,
+                None
+            )
+            
+            # Zapisz pixbuf i zleć odrysowanie
+            self.last_pixbuf = pixbuf
+            self.camera_area.queue_draw()
+        
+        # Kontynuuj aktualizację
+        return GLib.SOURCE_CONTINUE
+    
+    def on_register_clicked(self, button):
+        dialog = Gtk.Dialog(title="Rejestracja nowego użytkownika", transient_for=self, flags=0)
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK)
+
+        content_area = dialog.get_content_area()
+        label = Gtk.Label(label="Wprowadź nazwę użytkownika poniżej i upewnij się, że Twoja twarz jest dobrze widoczna w kamerze.")
+        content_area.add(label)
+
+        entry = Gtk.Entry()
+        entry.set_placeholder_text("Nazwa użytkownika")
+        content_area.add(entry)
+        dialog.show_all()
+
+        response = dialog.run()
+        user_id = entry.get_text().strip()
+        dialog.destroy()
+
+        if response == Gtk.ResponseType.OK and user_id:
+            if user_id in self.system.face_recognition.get_registered_users():
+                self.show_message("Błąd", f"Użytkownik '{user_id}' już istnieje.", Gtk.MessageType.ERROR)
+                return
+
+            frame = None
+            session = None
+            with self.capture_thread.frame_lock:
+                if self.capture_thread.latest_frame is not None:
+                    frame = self.capture_thread.latest_frame.copy()
+                    session = self.capture_thread.latest_session
+
+            if frame is None or session is None:
+                self.show_message("Błąd", "Brak obrazu z kamery lub danych sesji.", Gtk.MessageType.ERROR)
+                return
+
+            # Sprawdź warunki rejestracji
+            unidentified_faces = [res for res in session.face_results if res[0] == "Nieznany"]
+
+            if len(unidentified_faces) != 1:
+                self.show_message(
+                    "Błąd rejestracji",
+                    "Do rejestracji wymagana jest dokładnie jedna, nierozpoznana twarz w kadrze.",
+                    Gtk.MessageType.WARNING
+                )
+                return
+
+            # Rejestracja
+            registered = self.system.face_recognition.register_face(frame, user_id)
+            if registered:
+                self.show_message("Sukces", f"Pomyślnie zarejestrowano użytkownika '{user_id}'.")
+            else:
+                self.show_message("Błąd", "Wystąpił nieoczekiwany błąd podczas rejestracji.", Gtk.MessageType.ERROR)
+    
+    def on_users_clicked(self, button):
+        dialog = Gtk.Dialog(title="Zarejestrowani użytkownicy", transient_for=self, flags=0)
+        dialog.add_buttons(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE)
+
+        content_area = dialog.get_content_area()
+        store = Gtk.ListStore(str)
+        for user in sorted(self.system.face_recognition.get_registered_users()):
+            store.append([user])
+
+        treeview = Gtk.TreeView(model=store)
+        renderer = Gtk.CellRendererText()
+        column = Gtk.TreeViewColumn("Użytkownik", renderer, text=0)
+        treeview.append_column(column)
+        content_area.add(treeview)
+
+        delete_button = Gtk.Button(label="Usuń zaznaczonego użytkownika")
+        delete_button.connect("clicked", self.on_delete_user_clicked, treeview)
+        content_area.add(delete_button)
+
+        dialog.show_all()
+        dialog.run()
+        dialog.destroy()
+
+    def on_delete_user_clicked(self, button, treeview):
+        selection = treeview.get_selection()
+        model, treeiter = selection.get_selected()
+        if treeiter is not None:
+            user_id = model[treeiter][0]
+            
+            confirm_dialog = Gtk.MessageDialog(
+                transient_for=self,
+                flags=0,
+                message_type=Gtk.MessageType.QUESTION,
+                buttons=Gtk.ButtonsType.YES_NO,
+                text=f"Czy na pewno chcesz usunąć użytkownika '{user_id}'?"
+            )
+            response = confirm_dialog.run()
+            confirm_dialog.destroy()
+
+            if response == Gtk.ResponseType.YES:
+                if self.system.face_recognition.remove_user(user_id):
+                    model.remove(treeiter)
+                    self.show_message("Sukces", f"Usunięto użytkownika '{user_id}'.")
+                else:
+                    self.show_message("Błąd", f"Nie udało się usunąć użytkownika '{user_id}'.", Gtk.MessageType.ERROR)
+
+    def show_message(self, title, text, msg_type=Gtk.MessageType.INFO):
+        dialog = Gtk.MessageDialog(
+            transient_for=self,
+            flags=0,
+            message_type=msg_type,
+            buttons=Gtk.ButtonsType.OK,
+            text=title
+        )
+        dialog.format_secondary_text(text)
+        dialog.run()
+        dialog.destroy()
+    
+    def on_destroy(self, *args):
+        self.capture_thread.stop()
+        
+        self.system.cleanup()
+        Gtk.main_quit()
+
+def _detect_available_cameras(max_cameras_to_check=10) -> Dict[int, Any]:
+    """Skanuje system w poszukiwaniu dostępnych kamer, używając backendu V4L2 dla lepszej kompatybilności z Linuksem."""
+    available_cameras = {}
+    logger.info(f"Rozpoczynanie detekcji kamer (sprawdzanie do {max_cameras_to_check} urządzeń przy użyciu backendu V4L2)...")
+    for i in range(max_cameras_to_check):
+        cap = cv2.VideoCapture(i, cv2.CAP_V4L2)
+        if cap.isOpened():
             ret, frame = cap.read()
             if ret and frame is not None:
-                success = True
-                frame_sample = frame.copy()
-                break
-        cap.release()
-        if success:
-            available.append((cam_id, frame_sample))
-    return available
+                h, w, _ = frame.shape
+                available_cameras[i] = {"width": w, "height": h}
+                logger.info(f"Znaleziono i zweryfikowano kamerę o ID {i} ({w}x{h})")
+            else:
+                logger.warning(f"Nie udało się odczytać klatki z kamery o ID {i}, mimo że jest 'otwarta'.")
+            cap.release()
+    logger.info(f"Zakończono detekcję. Znaleziono {len(available_cameras)} zweryfikowanych kamer.")
+    return available_cameras
 
+def _select_camera_gui(available: Dict[int, Any]) -> Optional[int]:
+    """Wyświetla okno dialogowe GTK do wyboru kamery."""
+    dialog = Gtk.Dialog(title="Wybierz kamerę", flags=0)
+    dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK)
+    dialog.set_default_size(300, 150)
 
-def _select_camera_gui(available):
-    """Pozwala użytkownikowi wybrać kamerę w oknie OpenCV.
+    box = dialog.get_content_area()
+    label = Gtk.Label(label="Wybierz urządzenie wideo do użycia:")
+    box.pack_start(label, True, True, 10)
 
-    Klawisze sterujące:
-        n / strzałka w prawo – następna kamera
-        p / strzałka w lewo  – poprzednia kamera
-        Enter / spacja        – wybór
-        Esc                   – anuluj (zwraca None)
-    """
-    if not available:
-        return None
-    if len(available) == 1:
-        return available[0][0]
+    combo = Gtk.ComboBoxText()
+    for cam_id, details in available.items():
+        combo.append_text(f"Kamera {cam_id} ({details['width']}x{details['height']})")
+    combo.set_active(0)
+    box.pack_start(combo, True, True, 10)
 
-    idx = 0
-    win_name = "Wybór kamery"
-    cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+    dialog.show_all()
+    response = dialog.run()
+    
+    selected_id = None
+    if response == Gtk.ResponseType.OK:
+        active_index = combo.get_active()
+        selected_id = list(available.keys())[active_index]
 
-    while True:
-        cam_id, frame = available[idx]
-
-        # Zmniejsz podgląd jeśli jest zbyt duży
-        display = frame.copy()
-        h, w = display.shape[:2]
-        scale = 480 / max(h, w) if max(h, w) > 480 else 1.0
-        if scale != 1.0:
-            display = cv2.resize(display, (int(w*scale), int(h*scale)))
-
-        # Pasek informacyjny
-        cv2.rectangle(display, (0, 0), (display.shape[1], 30), (0, 0, 0), -1)
-        info_text = f"Kamera ID: {cam_id}  ({idx+1}/{len(available)})  [n/p – zmień, Enter – wybierz]"
-        cv2.putText(display, info_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1)
-
-        cv2.imshow(win_name, display)
-        key = cv2.waitKey(0) & 0xFF
-
-        if key in (13, 10, 32):  # Enter lub spacja
-            cv2.destroyWindow(win_name)
-            return cam_id
-        elif key in (ord('n'), 83):  # 'n' lub strzałka w prawo
-            idx = (idx + 1) % len(available)
-        elif key in (ord('p'), 81):  # 'p' lub strzałka w lewo
-            idx = (idx - 1) % len(available)
-        elif key == 27:  # Esc
-            cv2.destroyWindow(win_name)
-            return None
+    dialog.destroy()
+    return selected_id
 
 
 def main():
-    """Główna funkcja aplikacji."""
-    args = parse_arguments()
+    # 1. Wykryj kamery
+    detected_cams = _detect_available_cameras()
+    camera_id = None
 
-    camera_id = args.camera
-    if camera_id < 0:
-        # Automatyczna detekcja kamer + GUI do wyboru
-        detected = _detect_available_cameras()
-        if not detected:
-            logger.critical("Nie znaleziono żadnej działającej kamery.")
-            return 1
-
-        camera_id = _select_camera_gui(detected)
+    # 2. Logika wyboru kamery
+    if not detected_cams:
+        # Wyświetl błąd, jeśli nie znaleziono kamer
+        dialog = Gtk.MessageDialog(
+            transient_for=None, flags=0, message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK, text="Błąd krytyczny")
+        dialog.format_secondary_text("Nie znaleziono żadnej działającej kamery. Aplikacja zostanie zamknięta.")
+        dialog.run()
+        dialog.destroy()
+        logger.critical("Nie znaleziono żadnej działającej kamery.")
+        sys.exit(1)
+    elif len(detected_cams) > 1:
+        # Wyświetl okno wyboru, jeśli jest więcej niż jedna kamera
+        camera_id = _select_camera_gui(detected_cams)
         if camera_id is None:
-            logger.info("Przerwano wybór kamery – zamykanie aplikacji.")
-            return 0
+            logger.info("Anulowano wybór kamery. Zamykanie aplikacji.")
+            sys.exit(0)
+    else:
+        # Wybierz automatycznie, jeśli jest tylko jedna
+        camera_id = list(detected_cams.keys())[0]
+        logger.info(f"Automatycznie wybrano kamerę o ID: {camera_id}")
 
-    try:
-        app = BiometricApp(camera_id=camera_id)
-        app.run()
-    except Exception as e:
-        logger.critical(f"Krytyczny błąd: {e}", exc_info=True)
-        return 1
-
-    return 0
+    # 3. Uruchom aplikację
+    app = BiometricApp(camera_id=camera_id)
+    app.show_all()
+    Gtk.main()
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

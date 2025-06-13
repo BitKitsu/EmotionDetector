@@ -2,7 +2,14 @@ import os
 import cv2
 import numpy as np
 import face_recognition
+from scipy.spatial import distance
 from typing import List, Tuple, Dict, Optional, Union
+from enum import Enum
+
+
+class DistanceMetric(Enum):
+    EUCLIDEAN = "euclidean"
+    COSINE = "cosine"
 from pathlib import Path
 import pickle
 import logging
@@ -18,11 +25,16 @@ class FaceRecognition:
             tolerance: Tolerancja dopasowania twarzy (im mniejsza, tym bardziej restrykcyjne)
             model: Model do rozpoznawania twarzy ('hog' lub 'cnn')
         """
-        # Ustawienie domyślnej tolerancji na wyższą wartość dla lepszego dopasowania
-        self.tolerance = 0.6 if tolerance is None else tolerance
+        # Ustawienie progów tolerancji dla różnych metryk
+        self.tolerances = {
+            DistanceMetric.COSINE: 0.15,  # Domyślna tolerancja (odpowiada 0.85 pewności)
+            DistanceMetric.EUCLIDEAN: 0.15  # Domyślna tolerancja (odpowiada 0.85 pewności)
+        }
         
         # Używamy HOG jako domyślnego modelu, ponieważ jest szybszy i działa dobrze na CPU
         self.model = 'hog' if model is None else model
+        self.metric = DistanceMetric.COSINE  # Domyślna metryka
+        self.tolerance = self.tolerances[self.metric] # Ustaw próg dla domyślnej metryki
         
         # Domyślne ustawienia wykrywania twarzy
         self.num_jitters = 1  # Mniej zaburzeń, szybsze
@@ -79,17 +91,29 @@ class FaceRecognition:
         """
         logger.info(f"Rozpoczęcie rejestracji użytkownika: {name}")
         try:
-            # Konwersja z BGR (OpenCV) do RGB (face_recognition)
-            rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            logger.debug("Konwersja obrazu z BGR do RGB zakończona")
-            
-            # Wykrywanie położenia twarzy - używamy HOG (szybsze) do rejestracji
+            # Optymalizacja: skalowanie klatki przed detekcją
+            small_frame = cv2.resize(image, (0, 0), fx=0.5, fy=0.5)
+            rgb_image = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+            logger.debug("Konwersja obrazu z BGR do RGB i skalowanie zakończone")
+
+            # Wykrywanie położenia twarzy na mniejszym obrazie
             logger.debug("Wykrywanie twarzy...")
-            face_locations = face_recognition.face_locations(
+            face_locations_small = face_recognition.face_locations(
                 rgb_image, 
                 model='hog',
                 number_of_times_to_upsample=self.upsample
             )
+
+            if not face_locations_small:
+                logger.warning("Nie wykryto twarzy na zdjęciu")
+                return False
+
+            # Przeskaluj lokalizacje z powrotem do oryginalnego rozmiaru
+            face_locations = [
+                (top*2, right*2, bottom*2, left*2) for (top, right, bottom, left) in face_locations_small
+            ]
+            # Użyjemy pełnowymiarowego obrazu do ekstrakcji cech dla lepszej jakości
+            rgb_image_full = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             logger.debug(f"Znaleziono {len(face_locations)} twarzy na zdjęciu")
             
             if not face_locations:
@@ -107,7 +131,7 @@ class FaceRecognition:
             # Pobranie cech twarzy z dodatkowymi parametrami
             logger.debug("Ekstrakcja cech twarzy...")
             face_encodings = face_recognition.face_encodings(
-                rgb_image, 
+                rgb_image_full, 
                 known_face_locations=face_locations,
                 num_jitters=self.num_jitters,
                 model='large'  # Użyj większego modelu do lepszej dokładności
@@ -206,11 +230,17 @@ class FaceRecognition:
                 confidence = 0.0
                 
                 try:
-                    # Obliczenie odległości do wszystkich znanych twarzy
-                    face_distances = face_recognition.face_distance(
-                        self.known_face_encodings, 
-                        face_encoding
-                    )
+                    if self.metric == DistanceMetric.EUCLIDEAN:
+                        # Obliczenie odległości euklidesowej (oryginalna metoda biblioteki)
+                        face_distances = face_recognition.face_distance(
+                            self.known_face_encodings,
+                            face_encoding
+                        )
+                    else:  # Domyślnie COSINE
+                        # Obliczenie odległości kosinusowej (nasza implementacja)
+                        face_distances = [distance.cosine(known_encoding, face_encoding) for known_encoding in
+                                          self.known_face_encodings]
+
                     
                     # Znalezienie najlepszego dopasowania
                     best_match_index = np.argmin(face_distances)
@@ -248,9 +278,37 @@ class FaceRecognition:
             return []
     
     def get_registered_users(self) -> List[str]:
-        """Zwraca listę zarejestrowanych użytkowników."""
-        return list(set(self.known_face_names))
+        """Zwraca listę unikalnych, posortowanych nazw zarejestrowanych użytkowników."""
+        return sorted(list(set(self.known_face_names)))
+
+    def get_tolerance(self, metric: DistanceMetric) -> float:
+        """Pobiera próg tolerancji dla danej metryki."""
+        return self.tolerances.get(metric, 0.6)  # Zwróć 0.6 jako domyślną wartość
+
+    def set_tolerance(self, metric: DistanceMetric, value: float):
+        """Ustawia próg tolerancji dla danej metryki."""
+        if metric in self.tolerances:
+            self.tolerances[metric] = value
+            logger.info(f"Zaktualizowano próg tolerancji dla {metric.name} na: {value}")
     
+    def set_metric(self, metric: DistanceMetric):
+        """Ustawia metrykę do porównywania twarzy."""
+        self.metric = metric
+        self.tolerance = self.tolerances[self.metric]
+        logger.info(f"Zmieniono metrykę porównywania na: {self.metric.value}")
+        logger.info(f"Ustawiono próg tolerancji na: {self.tolerance}")
+
+    def set_tolerance(self, metric: DistanceMetric, value: float):
+        """Ustawia próg tolerancji dla podanej metryki."""
+        if metric in self.tolerances:
+            self.tolerances[metric] = value
+            # Jeśli zmieniamy próg dla aktywnej metryki, zaktualizuj go natychmiast
+            if self.metric == metric:
+                self.tolerance = value
+                logger.info(f"Zaktualizowano próg tolerancji dla {metric.value} na: {self.tolerance}")
+        else:
+            logger.warning(f"Nieznana metryka: {metric}")
+
     def remove_user(self, name: str) -> bool:
         """Usuwa użytkownika z bazy danych.
         
