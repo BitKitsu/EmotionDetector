@@ -71,9 +71,10 @@ class UserSession:
             'auth_attempts': self.auth_attempts,
             'session_start': self.session_start,
             'emotion_history': [
-                {e_type.name: score for e_type, score in emotions.items()}
-                for emotions in self.emotion_history
-            ]
+                 { (e_type.name if hasattr(e_type, 'name') else str(e_type)): score
+                   for e_type, score in emotions.items() }
+                 for emotions in self.emotion_history
+             ]
         }
     
     @classmethod
