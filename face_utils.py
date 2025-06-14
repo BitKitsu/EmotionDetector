@@ -28,7 +28,7 @@ class FaceRecognition:
         # Ustawienie progów tolerancji dla różnych metryk
         self.tolerances = {
             DistanceMetric.COSINE: 0.15,  # Domyślna tolerancja (odpowiada 0.85 pewności)
-            DistanceMetric.EUCLIDEAN: 0.15  # Domyślna tolerancja (odpowiada 0.85 pewności)
+            DistanceMetric.EUCLIDEAN: 0.35  # Domyślna tolerancja (odpowiada 0.65 pewności)
         }
         
         # Używamy HOG jako domyślnego modelu, ponieważ jest szybszy i działa dobrze na CPU
@@ -134,7 +134,7 @@ class FaceRecognition:
                 rgb_image_full, 
                 known_face_locations=face_locations,
                 num_jitters=self.num_jitters,
-                model='large'  # Użyj większego modelu do lepszej dokładności
+                model='small'  # Użyj szybszego modelu dla wideo
             )
             logger.debug(f"Wyodrębniono cechy dla {len(face_encodings)} twarzy")
             
@@ -220,7 +220,7 @@ class FaceRecognition:
                 rgb_frame, 
                 known_face_locations=face_locations,  # Przetwarzamy wszystkie twarze
                 num_jitters=self.num_jitters,
-                model='large'  # Użyj większego modelu do lepszej dokładności
+                model='small'  # Użyj szybszego modelu dla wideo
             )
             
             results = []
@@ -306,8 +306,17 @@ class FaceRecognition:
             if self.metric == metric:
                 self.tolerance = value
                 logger.info(f"Zaktualizowano próg tolerancji dla {metric.value} na: {self.tolerance}")
+    
+    def toggle_metric(self) -> DistanceMetric:
+        """Przełącza metrykę (COSINE <-> EUCLIDEAN) i aktualizuje próg tolerancji.
+        Zwraca nową, aktywną metrykę."""
+        if self.metric == DistanceMetric.COSINE:
+            self.metric = DistanceMetric.EUCLIDEAN
         else:
-            logger.warning(f"Nieznana metryka: {metric}")
+            self.metric = DistanceMetric.COSINE
+        self.tolerance = self.tolerances[self.metric]
+        logger.info(f"Przełączono metrykę na: {self.metric.value}, próg: {self.tolerance}")
+        return self.metric
 
     def remove_user(self, name: str) -> bool:
         """Usuwa użytkownika z bazy danych.

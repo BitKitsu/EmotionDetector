@@ -251,6 +251,13 @@ class BiometricSystem:
         # Sprawdź, czy użytkownik jest już uwierzytelniony i czy sesja jest wciąż ważna
         # Zawsze aktualizuj pewność sesji
         session.confidence = confidence
+        # Aktualizacja emocji – zapisuj zawsze gdy dostępne
+        if emotion_results:
+            session.last_emotions = emotion_results
+            emotion_data = emotion_results[0].scores
+            session.emotion_history.append(emotion_data)
+            # Ogranicz historię do ostatnich N wpisów
+            session.emotion_history = session.emotion_history[-self.emotion_history_size:]
 
         # Sprawdź, czy użytkownik jest już uwierzytelniony i czy sesja jest wciąż ważna
         if session.auth_state == AuthState.AUTHENTICATED:
@@ -290,12 +297,7 @@ class BiometricSystem:
                 self.last_confirmation_increment_time = 0.0
             
             # Jeśli użytkownik jest uwierzytelniony, aktualizuj historię emocji
-            if session.auth_state == AuthState.AUTHENTICATED:
-                if emotion_results:
-                    emotion_data = emotion_results[0].scores
-                    session.emotion_history.append(emotion_data)
-                    session.emotion_history = session.emotion_history[-self.emotion_history_size:]
-                    session.last_emotions = emotion_results
+
         
         self.current_session = session
         return session

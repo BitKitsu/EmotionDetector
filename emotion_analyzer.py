@@ -54,7 +54,7 @@ class EmotionAnalyzer:
             'brow_furrow': {'ANGRY': 0.6, 'SAD': 0.4},
             'eye_open': {'SURPRISED': 0.7, 'FEAR': 0.3},
             'mouth_open': {'SURPRISED': 0.8, 'HAPPY': 0.2},
-            'lip_corner_depression': {'SAD': 0.7, 'ANGRY': 0.3},
+            'lip_corner_depression': {'SAD': 0.3, 'ANGRY': 0.2, 'NEUTRAL': 0.5},
             'nose_wrinkle': {'DISGUSTED': 0.9, 'ANGRY': 0.1}
         }
     
