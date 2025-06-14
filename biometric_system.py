@@ -380,38 +380,20 @@ class BiometricSystem:
             bbox = (x, y, w, h)
 
             try:
-                tracker = None
                 try:
-                    # 1. Spróbuj najlepszego - CSRT (z opencv-contrib-python)
                     tracker = cv2.TrackerCSRT_create()
-                    logger.debug("Używam trackera: CSRT")
                 except AttributeError:
-                    logger.warning("Tracker CSRT niedostępny, próbuję KCF...")
-                    try:
-                        # 2. Spróbuj KCF (często dostępny w contrib)
-                        tracker = cv2.TrackerKCF_create()
-                        logger.debug("Używam trackera: KCF")
-                    except AttributeError:
-                        logger.warning("Standardowe trackery niedostępne, próbuję 'legacy'...")
-                        try:
-                            # 3. Spróbuj starego MOSSE (z 'legacy')
-                            tracker = cv2.legacy.TrackerMOSSE_create()
-                            logger.debug("Używam trackera: MOSSE (legacy)")
-                        except AttributeError:
-                            # 4. Jeśli wszystko zawiedzie
-                            logger.error("Nie znaleziono żadnego działającego trackera. Śledzenie nie będzie działać. Zainstaluj 'opencv-contrib-python'.")
-                            # Zwracamy puste wyniki, aby system działał dalej w trybie niskiej wydajności bez crasha
-                            self.active_trackers.clear()
-                            return []
+                    logger.warning("Tracker CSRT niedostępny, używam MOSSE...")
+                    tracker = cv2.legacy.TrackerMOSSE_create()
 
-                if tracker:
-                    tracker.init(frame, bbox)
-                    tracker_id = self.next_tracker_id
-                    self.active_trackers[tracker_id] = (tracker, user_id, confidence)
-                    self.next_tracker_id += 1
-                    new_face_results.append((user_id, confidence, (top, right, bottom, left)))
-                    logger.debug(f"Zainicjalizowano nowy tracker ID {tracker_id} dla {user_id}")
+                tracker.init(frame, bbox)
 
+                tracker_id = self.next_tracker_id
+                self.active_trackers[tracker_id] = (tracker, user_id, confidence)
+                self.next_tracker_id += 1
+                
+                new_face_results.append((user_id, confidence, (top, right, bottom, left)))
+                logger.debug(f"Zainicjalizowano nowy tracker ID {tracker_id} dla {user_id}")
             except Exception as e:
                 logger.error(f"Nie udało się zainicjalizować trackera dla {user_id}: {e}")
                 

@@ -1,4 +1,4 @@
-opencv-python>=4.5.0
+opencv-contrib-python>=4.5.0
 mediapipe>=0.8.9.1
 numpy>=1.19.5
 matplotlib>=3.4.3
