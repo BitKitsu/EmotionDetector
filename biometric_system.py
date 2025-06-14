@@ -60,6 +60,7 @@ class UserSession:
     auth_attempts: int = 0
     max_auth_attempts: int = 3
     session_start: float = field(default_factory=time.time)
+    emotion_baseline: Optional[Dict[str, float]] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Konwertuje obiekt sesji na słownik."""
@@ -70,6 +71,7 @@ class UserSession:
             'confidence': self.confidence,
             'auth_attempts': self.auth_attempts,
             'session_start': self.session_start,
+            'emotion_baseline': self.emotion_baseline,
             'emotion_history': [
                  { (e_type.name if hasattr(e_type, 'name') else str(e_type)): score
                    for e_type, score in emotions.items() }
@@ -87,6 +89,8 @@ class UserSession:
         session.confidence = data.get('confidence', 0.0)
         session.auth_attempts = data.get('auth_attempts', 0)
         session.session_start = data.get('session_start', time.time())
+        session.emotion_baseline = data.get('emotion_baseline')
+
         
         # Konwersja słownika emocji z powrotem na obiekty EmotionResult
         emotion_history = []
@@ -136,7 +140,7 @@ class BiometricSystem:
     def _load_sessions(self) -> None:
         """Wczytuje zapisane sesje użytkowników."""
         sessions_file = DATA_DIR / 'user_sessions.json'
-        if sessions_file.exists():
+        if sessions_file.exists() and sessions_file.stat().st_size > 0:
             try:
                 with open(sessions_file, 'r') as f:
                     sessions_data = json.load(f)
@@ -145,6 +149,9 @@ class BiometricSystem:
                         for user_id, session_data in sessions_data.items()
                     }
                 logger.info(f"Wczytano {len(self.sessions)} sesji użytkowników")
+            except json.JSONDecodeError as e:
+                logger.error(f"Błąd podczas wczytywania sesji: {e}")
+                self.sessions = {}
             except Exception as e:
                 logger.error(f"Błąd podczas wczytywania sesji: {e}")
     
@@ -231,9 +238,6 @@ class BiometricSystem:
         
 
         
-        # Analiza emocji
-        emotion_results = self.emotion_analyzer.detect_emotions(frame)
-        
         # Pobranie lub utworzenie sesji użytkownika
         if user_id in self.sessions:
             session = self.sessions[user_id]
@@ -244,6 +248,14 @@ class BiometricSystem:
                 last_seen=time.time()
             )
             self.sessions[user_id] = session
+
+        # Analiza emocji
+        emotion_results, new_baseline = self.emotion_analyzer.detect_emotions(frame)
+
+        # Jeśli kalibracja się zakończyła, zapisz nową linię bazową w sesji
+        if new_baseline:
+            session.emotion_baseline = new_baseline
+            self._save_sessions()  # Zapisz sesje po udanej kalibracji
 
         # Odśwież znacznik czasu
         current_time = time.time()
@@ -283,6 +295,13 @@ class BiometricSystem:
                     self.confirmation_count = 0
                     self.last_confirmation_increment_time = 0.0
                     logger.info(f"Użytkownik {user_id} pomyślnie uwierzytelniony (pewność: {confidence:.2f})")
+
+                    # Po udanym uwierzytelnieniu, załaduj zapisaną linię bazową (jeśli istnieje)
+                    if session.emotion_baseline:
+                        self.emotion_analyzer.set_baseline(session.emotion_baseline)
+                    else:
+                        # Jeśli użytkownik nie ma linii bazowej, zresetuj do domyślnej
+                        self.emotion_analyzer.baseline_raw = None
             else:
                 # Resetuj licznik jeśli pewność spadnie poniżej progu
                 if self.confirmation_count > 0:

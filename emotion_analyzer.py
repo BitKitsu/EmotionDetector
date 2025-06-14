@@ -46,17 +46,38 @@ class EmotionAnalyzer:
         self.EYE_LEFT = 33
         self.EYE_RIGHT = 263
         self.NOSE_TIP = 4
+        # --- Kalibracja neutralnej twarzy ---
+        self.baseline_raw: Optional[Dict[str, float]] = None
+        self._calibrating: bool = False
+        self._calib_samples: List[Dict[str, float]] = []
+        self._required_samples: int = 25
         
         # Wagi dla różnych emocji (można dostosować)
         self.EMOTION_WEIGHTS = {
-            'smile': {'HAPPY': 1.0},                       # bez udziału NEUTRAL
+            'smile': {'HAPPY': 0.7, 'NEUTRAL': 0.3},
             'surprise': {'SURPRISED': 0.9, 'FEAR': 0.1},
             'brow_furrow': {'ANGRY': 0.6, 'SAD': 0.4},
-            'eye_open': {'SURPRISED': 0.8, 'FEAR': 0.2},
+            'eye_open': {'SURPRISED': 0.7, 'FEAR': 0.3},
             'mouth_open': {'SURPRISED': 0.8, 'HAPPY': 0.2},
-            'lip_corner_depression': {'SAD': 0.4, 'ANGRY': 0.3, 'NEUTRAL': 0.3},
+            'lip_corner_depression': {'SAD': 0.3, 'ANGRY': 0.2, 'NEUTRAL': 0.5},
             'nose_wrinkle': {'DISGUSTED': 0.9, 'ANGRY': 0.1}
         }
+
+    def set_baseline(self, baseline: Dict[str, float]):
+        """Ustawia istniejącą linię bazową dla emocji."""
+        self.baseline_raw = baseline
+        logger.info("Załadowano istniejącą linię bazową dla emocji.")
+
+    def is_calibrating(self) -> bool:
+        """Zwraca, czy trwa proces kalibracji."""
+        return self._calibrating
+    
+    def start_calibration(self, samples: int = 25):
+        self._calibrating = True
+        self._calib_samples = []
+        self._required_samples = samples
+        self.baseline_raw = None  # Resetuj starą kalibrację
+        logger.info("Rozpoczęto kalibrację neutralnej twarzy (zbieranie %d próbek)...", samples)
     
     def _get_landmark_point(self, landmarks, idx: int, frame_shape: Tuple[int, int]) -> Tuple[float, float]:
         """Pobiera współrzędne punktu charakterystycznego."""
@@ -105,20 +126,28 @@ class EmotionAnalyzer:
         return distances
     
     def _normalize_features(self, features: Dict[str, float], frame_shape: Tuple[int, int]) -> Dict[str, float]:
-        """Normalizuje cechy do zakresu [0, 1]."""
+        """Normalizuje cechy (odchyłka od baseline) do zakresu [0, 1]."""
         height, width = frame_shape[:2]
-        face_size = np.sqrt(width * height)  # Przybliżony rozmiar twarzy
-        
-        # Normalizacja cech
+        face_size = np.sqrt(width * height)
+
+        def _norm(val, denom):
+            return np.clip(val / denom, 0, 1)
+
+        # Odchyłki względem baseline, jeżeli dostępna
+        if self.baseline_raw:
+            diff = {k: abs(features[k] - self.baseline_raw.get(k, features[k])) for k in features}
+        else:
+            diff = features
+
         normalized = {}
-        normalized['smile'] = np.clip(features['smile'] / (0.4 * width), 0, 1)
-        normalized['mouth_open'] = np.clip(features['mouth_open'] / (0.3 * height), 0, 1)
-        normalized['brow_raise'] = np.clip(features['brow_raise'] / (0.1 * height), 0, 1)
-        normalized['brow_furrow'] = np.clip(features['brow_furrow'] / (0.5 * face_size), 0, 1)
-        normalized['eye_open'] = np.clip(features['eye_open'] / (0.15 * height), 0, 1)
-        normalized['lip_corner_depression'] = np.clip(features['lip_corner_depression'] / (0.3 * height), 0, 1)
-        normalized['nose_wrinkle'] = np.clip(features['nose_wrinkle'] / (0.2 * face_size), 0, 1)
-        
+        normalized['smile'] = _norm(diff['smile'], 0.4 * width)
+        normalized['mouth_open'] = _norm(diff['mouth_open'], 0.3 * height)
+        normalized['brow_raise'] = _norm(diff['brow_raise'], 0.1 * height)
+        normalized['brow_furrow'] = _norm(diff['brow_furrow'], 0.5 * face_size)
+        normalized['eye_open'] = _norm(diff['eye_open'], 0.15 * height)
+        normalized['lip_corner_depression'] = _norm(diff['lip_corner_depression'], 0.3 * height)
+        normalized['nose_wrinkle'] = _norm(diff['nose_wrinkle'], 0.2 * face_size)
+
         return normalized
     
     def _calculate_emotion_scores(self, features: Dict[str, float]) -> Dict[str, float]:
@@ -146,44 +175,69 @@ class EmotionAnalyzer:
             frame: Obraz wejściowy w formacie BGR
             
         Returns:
-            Lista obiektów EmotionResult z wykrytymi emocjami
+            Tuple[List[EmotionResult], Optional[Dict[str, float]]]: Wyniki emocji i nowa linia bazowa (jeśli utworzono).
         """
         try:
-            # Konwersja do RGB
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # Wykrywanie twarzy
             results = self.face_mesh.process(rgb_frame)
-            
+
+            new_baseline = None
             if not results.multi_face_landmarks:
-                return []
-            
-            results_list = []
-            
-            for face_landmarks in results.multi_face_landmarks:
-                # Obliczenie cech
-                distances = self._calculate_distances(face_landmarks.landmark, frame.shape)
-                features = self._normalize_features(distances, frame.shape)
-                
-                # Obliczenie wyników emocji
-                emotion_scores = self._calculate_emotion_scores(features)
-                
-                # Wybór dominującej emocji
-                dominant_emotion = max(emotion_scores.items(), key=lambda x: x[1])
-                emotion_type = EmotionType[dominant_emotion[0]]
-                
-                results_list.append(EmotionResult(
-                    emotion=emotion_type,
-                    confidence=float(dominant_emotion[1]),
-                    scores=emotion_scores
-                ))
-            
-            return results_list
-            
+                self._maybe_collect_baseline(None)
+                return [], None
+
+            landmarks = results.multi_face_landmarks[0].landmark
+            raw_features = self._calculate_distances(landmarks, frame.shape)
+
+            new_baseline = self._maybe_collect_baseline(raw_features)
+
+            normalized_features = self._normalize_features(raw_features, frame.shape)
+            emotion_scores = self._calculate_emotion_scores(normalized_features)
+
+            if not emotion_scores:
+                return [], new_baseline
+
+            dominant_emotion_type = max(emotion_scores, key=emotion_scores.get)
+            confidence = emotion_scores[dominant_emotion_type]
+
+            emotion_results = [EmotionResult(
+                emotion=EmotionType[dominant_emotion_type],
+                confidence=confidence,
+                scores=emotion_scores
+            )]
+
+            return emotion_results, new_baseline
         except Exception as e:
             logger.error(f"Błąd podczas wykrywania emocji: {e}", exc_info=True)
-            return []
-    
+            return [], None
+
+    def _maybe_collect_baseline(self, raw_features: Optional[Dict[str, float]]) -> Optional[Dict[str, float]]:
+        """Jeśli trwa kalibracja, zbiera próbkę. Zwraca nową linię bazową po zakończeniu."""
+        if not self._calibrating:
+            return None
+
+        if raw_features is None:  # Nie wykryto twarzy, nie zbieraj próbki
+            return None
+
+        self._calib_samples.append(raw_features)
+        logger.info("Zebrano próbkę kalibracyjną %d/%d", len(self._calib_samples), self._required_samples)
+
+        if len(self._calib_samples) >= self._required_samples:
+            # Oblicz średnią linię bazową
+            avg_baseline = {}
+            if not self._calib_samples:
+                return None
+
+            for key in self._calib_samples[0]:
+                avg_baseline[key] = sum(s[key] for s in self._calib_samples) / len(self._calib_samples)
+
+            self.baseline_raw = avg_baseline
+            self._calibrating = False
+            logger.info("Zakończono kalibrację. Ustawiono nową bazę: %s", self.baseline_raw)
+            return self.baseline_raw  # Zwróć nową linię bazową
+
+        return None
+
     def draw_landmarks(self, frame: np.ndarray, landmarks, color=(0, 255, 0), thickness=1) -> np.ndarray:
         """Rysuje punkty charakterystyczne na obrazie."""
         if landmarks is None:

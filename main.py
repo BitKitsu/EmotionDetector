@@ -105,6 +105,11 @@ class BiometricApp(Gtk.Window):
         self.metric_button.connect("clicked", self.on_metric_button_clicked)
         self.info_box.pack_start(self.metric_button, False, False, 10)
 
+        # Przycisk kalibracji neutralnej twarzy
+        self.calibrate_button = Gtk.Button(label="Kalibruj neutralną")
+        self.calibrate_button.connect("clicked", self.on_calibrate_clicked)
+        self.info_box.pack_start(self.calibrate_button, False, False, 10)
+
         # Kontrolki do zmiany progów pewności
         self.confidence_frame = Gtk.Frame(label="Ustawienia progów pewności")
         self.confidence_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5, margin=10)
@@ -214,6 +219,27 @@ class BiometricApp(Gtk.Window):
         else:
             self.metric_button.set_label("Zmień metrykę na Euklidesową")
             self.metric_label.set_text("Metryka: Kosinusowa")
+
+    def on_calibrate_clicked(self, button):
+        """Rozpoczyna kalibrację neutralnej twarzy."""
+        if self.system.current_session and self.system.current_session.auth_state == AuthState.AUTHENTICATED:
+            self.system.emotion_analyzer.start_calibration()
+            button.set_sensitive(False)
+            button.set_label("Trwa kalibracja...")
+        else:
+            # Opcjonalnie: Pokaż dialog z informacją, że trzeba być zalogowanym
+            dialog = Gtk.MessageDialog(
+                transient_for=self,
+                flags=0,
+                message_type=Gtk.MessageType.INFO,
+                buttons=Gtk.ButtonsType.OK,
+                text="Kalibracja wymaga uwierzytelnienia",
+            )
+            dialog.format_secondary_text(
+                "Proszę najpierw uwierzytelnić się w systemie, aby przypisać kalibrację do Twojego profilu."
+            )
+            dialog.run()
+            dialog.destroy()
     
     def update_ui(self):
         # Odczytaj najnowszą klatkę z wątku kamery
@@ -225,40 +251,44 @@ class BiometricApp(Gtk.Window):
                 session = self.capture_thread.latest_session
 
         if frame is not None:
-            # Włącz przycisk rejestracji, gdy kamera jest gotowa
             if not self.register_button.get_sensitive():
                 self.register_button.set_sensitive(True)
-            # Aktualizacja interfejsu
-            if session and session.face_results:
-                # Rysowanie ramek i etykiet na klatce
-                for name, conf, (top, right, bottom, left) in session.face_results:
-                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-                    label = f"{name} ({conf:.2f})"
-                    cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            if session:
+                if session.face_results:
+                    for name, conf, (top, right, bottom, left) in session.face_results:
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                        label = f"{name} ({conf:.2f})"
+                        cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
                 self.status_label.set_text(f"Status: {session.auth_state.value}")
-                self.user_label.set_text(f"Użytkownik: {session.user_id}")
-                self.confidence_label.set_text(f"Pewność: {session.confidence:.2f}")
+                self.user_label.set_text(f"Użytkownik: {session.user_id or '-'}")
+                self.confidence_label.set_text(f"Pewność: {session.confidence:.2f}" if session.confidence > 0 else "Pewność: -")
+
+                if self.system.emotion_analyzer.is_calibrating():
+                    samples = len(self.system.emotion_analyzer._calib_samples)
+                    total = self.system.emotion_analyzer._required_samples
+                    self.calibrate_button.set_label(f"Kalibracja... ({samples}/{total})")
+                elif not self.calibrate_button.get_sensitive():
+                    self.calibrate_button.set_sensitive(True)
+                    self.calibrate_button.set_label("Kalibruj neutralną")
+
                 if session.last_emotions:
-                    emotion = session.last_emotions[0].emotion
-                    confidence = session.last_emotions[0].confidence
-                    self.emotion_label.set_text(f"Dominująca emocja: {emotion.value}")
-                    self.emotion_confidence_label.set_text(f"Pewność: {confidence:.1%}")
+                    dominant_emotion = session.last_emotions[0]
+                    self.emotion_label.set_text(f"Dominująca emocja: {dominant_emotion.emotion.value}")
+                    self.emotion_confidence_label.set_text(f"Pewność: {dominant_emotion.confidence:.2f}")
                 else:
                     self.emotion_label.set_text("Dominująca emocja: -")
                     self.emotion_confidence_label.set_text("Pewność: -")
             else:
-                # Resetuj etykiety, jeśli nie wykryto twarzy
                 self.status_label.set_text("Status: Niezalogowany")
                 self.user_label.set_text("Użytkownik: -")
                 self.confidence_label.set_text("Pewność: -")
                 self.emotion_label.set_text("Dominująca emocja: -")
                 self.emotion_confidence_label.set_text("Pewność: -")
 
-            # Zawsze aktualizuj FPS
             self.fps_label.set_text(f"FPS: {self.system.fps:.2f}")
 
-            # Konwersja klatki do formatu GTK
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             height, width = frame.shape[:2]
             pixbuf = GdkPixbuf.Pixbuf.new_from_data(
@@ -272,8 +302,6 @@ class BiometricApp(Gtk.Window):
                 None,
                 None
             )
-            
-            # Zapisz pixbuf i zleć odrysowanie
             self.last_pixbuf = pixbuf
             self.camera_area.queue_draw()
         
