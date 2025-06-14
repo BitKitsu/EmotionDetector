@@ -114,6 +114,12 @@ class BiometricSystem:
         
         # Wczytanie zapisanych sesji
         self._load_sessions()
+
+        # --- Śledzenie twarzy (optymalizacja wydajności) ---
+        self.active_trackers: Dict[int, Tuple[Any, str, float]] = {}  # tracker_id -> (tracker_obj, user_id, confidence)
+        self.next_tracker_id = 0
+        self.frames_since_last_full_recognition = 0
+        self.recognition_interval = 30  # Uruchom pełne rozpoznawanie co 30 klatek
     
     def _load_sessions(self) -> None:
         """Wczytuje zapisane sesje użytkowników."""
@@ -309,27 +315,89 @@ class BiometricSystem:
             self.frame_count = 0
             self.start_time = time.time()
 
-    def authenticate_user(self, frame: np.ndarray) -> UserSession:
-        """Uwierzytelnia użytkownika: wykrywa twarze, a następnie używa authenticate_user_with_results."""
+    def authenticate_user(self, frame: np.ndarray) -> Optional[UserSession]:
+        """Uwierzytelnia użytkownika, używając optymalizacji śledzenia."""
         self._update_fps()
-        # Optymalizacja: skalowanie klatki przed detekcją
-        small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
-        face_results_small = self.face_recognition.recognize_face(small_frame)
-
-        # Przeskaluj wyniki z powrotem do oryginalnego rozmiaru klatki
+        self.frames_since_last_full_recognition += 1
         face_results = []
-        if face_results_small:
-            for name, conf, (top_s, right_s, bottom_s, left_s) in face_results_small:
-                top = int(top_s * 2)
-                right = int(right_s * 2)
-                bottom = int(bottom_s * 2)
-                left = int(left_s * 2)
 
-                face_results.append((name, conf, (top, right, bottom, left)))
+        # Najpierw spróbuj zaktualizować istniejące trackery
+        if self.active_trackers:
+            face_results = self._update_trackers(frame)
 
+        # Jeśli nie ma śledzonych twarzy lub nadszedł czas na pełne skanowanie
+        if not self.active_trackers or self.frames_since_last_full_recognition >= self.recognition_interval:
+            self.frames_since_last_full_recognition = 0
+            # Optymalizacja: skalowanie klatki przed detekcją
+            small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+            face_results = self._run_full_recognition(frame, small_frame)
+
+        # Dalsza logika pozostaje taka sama
         session = self.authenticate_user_with_results(frame, face_results)
-        session.face_results = face_results
+        if session:
+            session.face_results = face_results
         return session
+
+    def _update_trackers(self, frame: np.ndarray) -> List[Tuple[str, float, Tuple]]:
+        """Aktualizuje pozycje aktywnych trackerów i zwraca wyniki."""
+        if not self.active_trackers:
+            return []
+
+        face_results = []
+        failed_tracker_ids = []
+
+        for tracker_id, (tracker, user_id, confidence) in self.active_trackers.items():
+            success, bbox = tracker.update(frame)
+            if success:
+                x, y, w, h = [int(v) for v in bbox]
+                top, right, bottom, left = y, x + w, y + h, x
+                face_results.append((user_id, confidence, (top, right, bottom, left)))
+            else:
+                logger.warning(f"Tracker ID {tracker_id} dla {user_id} zgubił cel.")
+                failed_tracker_ids.append(tracker_id)
+
+        for tracker_id in failed_tracker_ids:
+            del self.active_trackers[tracker_id]
+
+        return face_results
+
+    def _run_full_recognition(self, frame: np.ndarray, small_frame: np.ndarray) -> List[Tuple[str, float, Tuple]]:
+        """Przeprowadza pełny, kosztowny proces rozpoznawania i inicjalizuje nowe trackery."""
+        logger.debug("Uruchamianie pełnego rozpoznawania twarzy...")
+        recognized_faces_small = self.face_recognition.recognize_face(small_frame)
+        
+        self.active_trackers.clear()
+        self.next_tracker_id = 0
+
+        new_face_results = []
+        for user_id, confidence, (top_s, right_s, bottom_s, left_s) in recognized_faces_small:
+            top = int(top_s * 2)
+            right = int(right_s * 2)
+            bottom = int(bottom_s * 2)
+            left = int(left_s * 2)
+            
+            x, y, w, h = left, top, right - left, bottom - top
+            bbox = (x, y, w, h)
+
+            try:
+                try:
+                    tracker = cv2.TrackerCSRT_create()
+                except AttributeError:
+                    logger.warning("Tracker CSRT niedostępny, używam MOSSE...")
+                    tracker = cv2.legacy.TrackerMOSSE_create()
+
+                tracker.init(frame, bbox)
+
+                tracker_id = self.next_tracker_id
+                self.active_trackers[tracker_id] = (tracker, user_id, confidence)
+                self.next_tracker_id += 1
+                
+                new_face_results.append((user_id, confidence, (top, right, bottom, left)))
+                logger.debug(f"Zainicjalizowano nowy tracker ID {tracker_id} dla {user_id}")
+            except Exception as e:
+                logger.error(f"Nie udało się zainicjalizować trackera dla {user_id}: {e}")
+                
+        return new_face_results
 
     def _update_face_recognition_tolerance(self):
         """Aktualizuje tolerancję w module face_recognition na podstawie aktywnej metryki."""
