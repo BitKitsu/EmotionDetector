@@ -223,11 +223,12 @@ class BiometricApp(Gtk.Window):
     def on_calibrate_clicked(self, button):
         """Rozpoczyna kalibrację neutralnej twarzy."""
         if self.system.current_session and self.system.current_session.auth_state == AuthState.AUTHENTICATED:
-            self.system.emotion_analyzer.start_calibration()
+            user_id = self.system.current_session.user_id
+            self.system.emotion_analyzer.start_calibration(user_id=user_id)
             button.set_sensitive(False)
             button.set_label("Trwa kalibracja...")
         else:
-            # Opcjonalnie: Pokaż dialog z informacją, że trzeba być zalogowanym
+            logger.warning("Próba rozpoczęcia kalibracji bez uwierzytelnionego użytkownika.")
             dialog = Gtk.MessageDialog(
                 transient_for=self,
                 flags=0,

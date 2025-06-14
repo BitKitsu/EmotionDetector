@@ -14,29 +14,7 @@ from config import DATA_DIR, CAMERA_SETTINGS, UI_SETTINGS, EMOTION_DETECTION_SET
 
 logger = logging.getLogger(__name__)
 
-# Używamy standardowego cv2.putText z podstawieniem polskich znaków
-# zamiast cv2.freetype, które może nie być dostępne we wszystkich instalacjach
-logger.info("Using standard OpenCV text rendering with Polish character substitution.")
-
-def _draw_text(img: np.ndarray, text: str, pos: Tuple[int, int], font_scale: float = 0.7,
-               color: Tuple[int, int, int] = (255, 255, 255), thickness: int = 2) -> None:
-    """Rysuje tekst na obrazie z obsługą polskich znaków.
-    
-    Używa standardowego cv2.putText z podstawieniem znaków specjalnych.
-    """
-    # Mapa polskich znaków do ich odpowiedników ASCII
-    polish_chars = {
-        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n',
-        'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
-        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N',
-        'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
-    }
-    
-    # Zamień polskie znaki na ich odpowiedniki ASCII
-    clean_text = ''.join(polish_chars.get(c, c) for c in text)
-    
-    # Użyj standardowego putText z czcionką, która obsługuje szeroki zakres znaków
-    cv2.putText(img, clean_text, pos, cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness, cv2.LINE_AA)
+logger.info("Using GTK3 text rendering with native UTF-8 support.")
 
 
 class AuthState(Enum):
@@ -250,7 +228,7 @@ class BiometricSystem:
             self.sessions[user_id] = session
 
         # Analiza emocji
-        emotion_results, new_baseline = self.emotion_analyzer.detect_emotions(frame)
+        emotion_results, new_baseline = self.emotion_analyzer.detect_emotions(frame, current_user_id=user_id)
 
         # Jeśli kalibracja się zakończyła, zapisz nową linię bazową w sesji
         if new_baseline:
@@ -397,56 +375,44 @@ class BiometricSystem:
         return emotion_avg
     
     def draw_ui(self, frame: np.ndarray, session: Optional[UserSession] = None) -> np.ndarray:
-        self._update_fps()
         """Rysuje interfejs użytkownika na ramce wideo."""
+        self._update_fps()
         img = frame.copy()
-        height, width = img.shape[:2]
+        height, width, _ = img.shape
 
         # Tło dla paska statusu
-        cv2.rectangle(img, (0, 0), (width, 40), (50, 50, 50), -1)
+        cv2.rectangle(img, (0, 0), (width, 40), (20, 20, 20), -1)
 
-        # Dynamiczne pozycjonowanie
-        x_offset = 10
-        y_pos = 25
-
-        # FPS
+        # Wyświetlanie FPS
         fps_text = f"FPS: {self.fps:.1f}"
-        _draw_text(img, fps_text, (x_offset, y_pos), 0.7, (0, 255, 0), 2)
-        (fps_w, _), _ = cv2.getTextSize(fps_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-        x_offset += fps_w + 30
+        cv2.putText(img, fps_text, (10, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+        
+        if session and session.face_results:
+            # Rysowanie informacji o sesji i twarzach
+            for user_id, confidence, (x, y, w, h) in session.face_results:
+                # Ramka wokół twarzy
+                color = (0, 255, 0) if session.auth_state == AuthState.AUTHENTICATED else (0, 0, 255)
+                cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
 
-        if session:
-            status_text = f"Status: {session.auth_state.value}"
-            status_color = (0, 255, 0) if session.auth_state == AuthState.AUTHENTICATED else (0, 0, 255)
-            _draw_text(img, status_text, (x_offset, y_pos), 0.7, status_color, 2)
-            (status_w, _), _ = cv2.getTextSize(status_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-            x_offset += status_w + 30
+                # Tekst z ID użytkownika i statusem
+                auth_text = f"{user_id} ({session.auth_state.value})"
+                cv2.putText(img, auth_text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)
 
-            user_text = f"Użytkownik: {session.user_id}"
-            _draw_text(img, user_text, (x_offset, y_pos), 0.7, (255, 255, 255), 2)
-            (user_w, _), _ = cv2.getTextSize(user_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-            x_offset += user_w + 30
-            
-            # Wyświetlanie pewności, jeśli użytkownik jest uwierzytelniony
-            if session.auth_state == AuthState.AUTHENTICATED and session.user_id != "Nieznany":
-                confidence_text = f"Pewnosc: {session.confidence:.2f}"
-                _draw_text(img, confidence_text, (x_offset, y_pos), 0.7, (0, 255, 255), 2)
-                (conf_w, _), _ = cv2.getTextSize(confidence_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-                x_offset += conf_w + 30
+                # Pewność dopasowania
+                conf_text = f"Pewnosc: {confidence:.2f}"
+                cv2.putText(img, conf_text, (x, y + h + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2, cv2.LINE_AA)
 
-            # Jeśli wykryto emocje, wyświetl dominującą (po prawej stronie)
-            if session.last_emotions:
-                emotion = session.last_emotions[0].emotion
-                emotion_confidence = session.last_emotions[0].confidence
-                emotion_text = f"{emotion.value}: {emotion_confidence:.1%}"
-                emotion_colors = self.emotion_analyzer.get_emotion_colors()
-                color = emotion_colors.get(emotion, (255, 255, 255))
-                text_size, _ = cv2.getTextSize(emotion_text.encode('ascii', 'ignore').decode('ascii'), cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-                _draw_text(img, emotion_text, (width - text_size[0] - 10, y_pos), 0.7, color, 2)
+                # Wyświetlanie emocji
+                if session.last_emotions:
+                    for i, emotion_res in enumerate(session.last_emotions[:3]): # Pokaż do 3 emocji
+                        emotion_text = f"{emotion_res.emotion.value}: {emotion_res.confidence:.1%}"
+                        emotion_colors = self.emotion_analyzer.get_emotion_colors()
+                        emotion_color = emotion_colors.get(emotion_res.emotion, (255, 255, 255))
+                        cv2.putText(img, emotion_text, (x, y + h + 50 + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, emotion_color, 2, cv2.LINE_AA)
 
-        # Wyświetlanie aktualnej metryki
+        # Wyświetlanie aktualnej metryki na dole
         metric_text = f"Metryka: {self.face_recognition.metric.value.capitalize()} (M)"
-        _draw_text(img, metric_text, (10, height - 15), 0.6, (255, 255, 0), 2)
+        cv2.putText(img, metric_text, (10, height - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2, cv2.LINE_AA)
 
         return img
     

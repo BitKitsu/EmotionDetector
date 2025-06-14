@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class EmotionType(Enum):
     NEUTRAL = "Neutralna"
-    HAPPY = "Szczęście"
+    HAPPY = "Radość"
     SAD = "Smutek"
     SURPRISED = "Zaskoczenie"
     ANGRY = "Złość"
@@ -51,6 +51,7 @@ class EmotionAnalyzer:
         self._calibrating: bool = False
         self._calib_samples: List[Dict[str, float]] = []
         self._required_samples: int = 25
+        self._calibrating_for_user: Optional[str] = None
         
         # Wagi dla różnych emocji (można dostosować)
         self.EMOTION_WEIGHTS = {
@@ -72,13 +73,28 @@ class EmotionAnalyzer:
         """Zwraca, czy trwa proces kalibracji."""
         return self._calibrating
     
-    def start_calibration(self, samples: int = 25):
+    def start_calibration(self, user_id: str, samples: int = 25):
+        """Rozpoczyna kalibrację neutralnej twarzy dla danego użytkownika."""
+        if not user_id:
+            logger.error("Nie można rozpocząć kalibracji bez identyfikatora użytkownika.")
+            return
+
+        self.baseline_raw = None  # Resetuj bazę przed nową kalibracją
         self._calibrating = True
         self._calib_samples = []
         self._required_samples = samples
-        self.baseline_raw = None  # Resetuj starą kalibrację
-        logger.info("Rozpoczęto kalibrację neutralnej twarzy (zbieranie %d próbek)...", samples)
-    
+        self._calibrating_for_user = user_id
+        logger.info(f"Rozpoczęto kalibrację neutralnej twarzy dla '{user_id}' (zbieranie {samples} próbek)...")
+
+    def abort_calibration(self):
+        """Przerywa proces kalibracji."""
+        if not self._calibrating:
+            return
+        logger.warning(f"Przerwano kalibrację dla użytkownika '{self._calibrating_for_user}' z powodu wykrycia innej osoby lub błędu.")
+        self._calibrating = False
+        self._calib_samples = []
+        self._calibrating_for_user = None
+
     def _get_landmark_point(self, landmarks, idx: int, frame_shape: Tuple[int, int]) -> Tuple[float, float]:
         """Pobiera współrzędne punktu charakterystycznego."""
         height, width = frame_shape[:2]
@@ -168,16 +184,24 @@ class EmotionAnalyzer:
         
         return emotion_scores
     
-    def detect_emotions(self, frame: np.ndarray) -> List[EmotionResult]:
-        """Wykrywa emocje na podanym obrazie.
+    def detect_emotions(self, frame: np.ndarray, current_user_id: Optional[str] = None) -> Tuple[List[EmotionResult], Optional[Dict[str, float]]]:
+        """
+        Wykrywa emocje na podanym obrazie.
         
         Args:
             frame: Obraz wejściowy w formacie BGR
+            current_user_id: ID aktualnie wykrytego użytkownika, do weryfikacji podczas kalibracji.
             
         Returns:
             Tuple[List[EmotionResult], Optional[Dict[str, float]]]: Wyniki emocji i nowa linia bazowa (jeśli utworzono).
         """
         try:
+            # Sprawdzenie bezpieczeństwa kalibracji
+            if self.is_calibrating():
+                if current_user_id != self._calibrating_for_user:
+                    self.abort_calibration()
+                    return [], None  # Zwróć puste wyniki, kalibracja przerwana
+
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = self.face_mesh.process(rgb_frame)
 
