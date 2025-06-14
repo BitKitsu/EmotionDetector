@@ -428,7 +428,8 @@ def _detect_available_cameras(max_cameras_to_check=10) -> Dict[int, Any]:
     """Skanuje system w poszukiwaniu dostępnych kamer, dobierając odpowiedni backend do systemu operacyjnego."""
     # Wybierz odpowiedni backend dla systemu operacyjnego
     if sys.platform.startswith('linux'):
-        backend = cv2.CAP_V4L2
+        # Użyj V4L2 jeśli jest dostępne (standard dla Linuksa), w przeciwnym razie pozwól OpenCV wybrać automatycznie
+        backend = getattr(cv2, 'CAP_V4L2', cv2.CAP_ANY)
         backend_name = "V4L2 (Linux)"
     elif sys.platform == 'win32':
         backend = cv2.CAP_DSHOW
