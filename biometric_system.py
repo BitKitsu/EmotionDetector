@@ -470,13 +470,14 @@ class BiometricSystem:
                 conf_text = f"Pewnosc: {confidence:.2f}"
                 cv2.putText(img, conf_text, (x, y + h + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2, cv2.LINE_AA)
 
-                # Wyświetlanie emocji
-                if session.last_emotions:
-                    for i, emotion_res in enumerate(session.last_emotions[:3]): # Pokaż do 3 emocji
-                        emotion_text = f"{emotion_res.emotion.value}: {emotion_res.confidence:.1%}"
-                        emotion_colors = self.emotion_analyzer.get_emotion_colors()
-                        emotion_color = emotion_colors.get(emotion_res.emotion, (255, 255, 255))
-                        cv2.putText(img, emotion_text, (x, y + h + 50 + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, emotion_color, 2, cv2.LINE_AA)
+                # Wyświetlanie emocji tylko dla zarejestrowanych użytkowników
+                if user_id != "Nieznany":
+                    if session.last_emotions:
+                        for i, emotion_res in enumerate(session.last_emotions[:3]): # Pokaż do 3 emocji
+                            emotion_text = f"{emotion_res.emotion.value}: {emotion_res.confidence:.1%}"
+                            emotion_colors = self.emotion_analyzer.get_emotion_colors()
+                            emotion_color = emotion_colors.get(emotion_res.emotion, (255, 255, 255))
+                            cv2.putText(img, emotion_text, (x, y + h + 50 + i * 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, emotion_color, 2, cv2.LINE_AA)
 
         # Wyświetlanie aktualnej metryki na dole
         metric_text = f"Metryka: {self.face_recognition.metric.value.capitalize()} (M)"
