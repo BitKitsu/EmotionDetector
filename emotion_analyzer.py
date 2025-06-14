@@ -49,12 +49,12 @@ class EmotionAnalyzer:
         
         # Wagi dla różnych emocji (można dostosować)
         self.EMOTION_WEIGHTS = {
-            'smile': {'HAPPY': 0.7, 'NEUTRAL': 0.3},
+            'smile': {'HAPPY': 1.0},                       # bez udziału NEUTRAL
             'surprise': {'SURPRISED': 0.9, 'FEAR': 0.1},
             'brow_furrow': {'ANGRY': 0.6, 'SAD': 0.4},
-            'eye_open': {'SURPRISED': 0.7, 'FEAR': 0.3},
+            'eye_open': {'SURPRISED': 0.8, 'FEAR': 0.2},
             'mouth_open': {'SURPRISED': 0.8, 'HAPPY': 0.2},
-            'lip_corner_depression': {'SAD': 0.3, 'ANGRY': 0.2, 'NEUTRAL': 0.5},
+            'lip_corner_depression': {'SAD': 0.4, 'ANGRY': 0.3, 'NEUTRAL': 0.3},
             'nose_wrinkle': {'DISGUSTED': 0.9, 'ANGRY': 0.1}
         }
     
