@@ -195,6 +195,10 @@ class EmotionAnalyzer:
         Returns:
             Tuple[List[EmotionResult], Optional[Dict[str, float]]]: Wyniki emocji i nowa linia bazowa (jeśli utworzono).
         """
+        # Nie wykrywaj emocji dla nierozpoznanych użytkowników
+        if current_user_id == "Nieznany":
+            return [], None
+
         try:
             # Sprawdzenie bezpieczeństwa kalibracji
             if self.is_calibrating():
