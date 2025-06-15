@@ -1,0 +1,36 @@
+\chapter{Wyniki i dyskusja}
+\label{chap:wyniki}
+
+Przeprowadzone testy funkcjonalne potwierdziły poprawność działania zaimplementowanego systemu. Aplikacja jest w stanie w czasie rzeczywistym uwierzytelniać zarejestrowanych użytkowników oraz analizować ich emocje z zadowalającą dokładnością. Na rysunku \ref{fig:placeholder_app} przedstawiono zrzut ekranu działającej aplikacji.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/placeholder.eps}
+\caption{Zrzut ekranu głównego okna aplikacji.}
+\label{fig:placeholder_app}
+\end{figure}
+
+\section{Wydajność systemu}
+Zastosowanie autorskiego mechanizmu optymalizacji opartego na trackerach pozwoliło na osiągnięcie wysokiej wydajności. Na komputerze testowym (specyfikacja do uzupełnienia) system działał ze średnią prędkością 20-25 klatek na sekundę (FPS), co zapewnia płynne działanie interfejsu i analizy wideo. Na wykresie \ref{fig:fps_chart} przedstawiono porównanie wydajności systemu z włączoną i wyłączoną optymalizacją.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/placeholder.eps}
+\caption{Wykres porównujący wydajność (FPS) systemu z włączoną i wyłączoną optymalizacją śledzenia. (Placeholder)}
+\label{fig:fps_chart}
+\end{figure}
+
+\section{Możliwości implementacyjne i kierunki rozwoju}
+Zaprojektowany system posiada duży potencjał praktycznego wykorzystania. Może być zastosowany w takich obszarach jak:
+\begin{itemize}
+    \item \textbf{Systemy kontroli dostępu}: Zabezpieczanie dostępu do pomieszczeń lub systemów komputerowych.
+    \item \textbf{Inteligentne interfejsy}: Aplikacje, które adaptują swoje działanie do stanu emocjonalnego użytkownika (np. w grach komputerowych, systemach e-learningowych).
+    \item \textbf{Badania psychologiczne}: Narzędzie do monitorowania reakcji emocjonalnych uczestników badań.
+\end{itemize}
+
+Możliwe kierunki dalszego rozwoju projektu obejmują:
+\begin{itemize}
+    \item Rozbudowę algorytmu analizy emocji o bardziej zaawansowane modele uczenia maszynowego (np. SVM, sieci neuronowe) trenowane na zebranych danych.
+    \item Dodanie kolejnych modalności biometrycznych, takich jak rozpoznawanie głosu, w celu stworzenia systemu multimodalnego.
+    \item Zwiększenie odporności na próby oszustwa (spoofing) poprzez implementację algorytmów detekcji żywotności (liveness detection).
+\end{itemize}

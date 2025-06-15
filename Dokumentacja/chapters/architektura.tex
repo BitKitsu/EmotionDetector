@@ -1,0 +1,34 @@
+\chapter{Architektura i technologie}
+\label{chap:architektura}
+
+System został zaprojektowany w architekturze modułowej, co zapewnia jego elastyczność i łatwość w dalszym rozwoju. Składa się z trzech głównych warstw: interfejsu użytkownika (UI), logiki biznesowej oraz warstwy przetwarzania danych. Poniżej przedstawiono kluczowe technologie i komponenty wykorzystane w projekcie.
+
+\section{Wykorzystane technologie}
+Do budowy systemu wykorzystano następujące narzędzia i biblioteki:
+\begin{itemize}
+    \item \textbf{Python 3.9+}: Główny język programowania projektu.
+    \item \textbf{OpenCV (Open Source Computer Vision Library)}: Kluczowa biblioteka do przetwarzania obrazu w czasie rzeczywistym, przechwytywania klatek z kamery oraz podstawowych operacji na obrazie \cite{opencv_library}.
+    \item \textbf{GTK 3 (GIMP Toolkit)}: Wykorzystane do stworzenia graficznego interfejsu użytkownika (GUI) aplikacji. Zapewnia natywny wygląd i responsywność na różnych systemach operacyjnych.
+    \item \textbf{dlib}: Biblioteka zawierająca zaawansowane algorytmy uczenia maszynowego. W projekcie używana do detekcji punktów charakterystycznych twarzy (facial landmarks) za pomocą pre-trenowanego modelu. Model ten, \texttt{shape\_predictor\_68\_face\_landmarks.dat}, jest dostępny publicznie i został stworzony przez autorów biblioteki \cite{dlib_library}. Można go pobrać ze strony: \url{http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2}.
+    \item \textbf{face\_recognition}: Biblioteka wysokiego poziomu, bazująca na dlib, używana do kodowania cech twarzy (face embeddings) i ich porównywania. Umożliwia identyfikację osób.
+    \item \textbf{MediaPipe}: Framework od Google do budowania potoków przetwarzania danych percepcyjnych. W projekcie wykorzystano go do wydajnej detekcji siatki twarzy (face mesh), która stanowi podstawę dla autorskiego algorytmu analizy emocji \cite{mediapipe}.
+\end{itemize}
+
+\section{Struktura modułowa}
+Kod źródłowy został podzielony na logiczne moduły, co ułatwia zarządzanie projektem (szczegółowe listingi wybranych fragmentów znajdują się w rozdziale \ref{chap:implementacja}):
+\begin{itemize}
+    \item \texttt{main.py}: Główny plik aplikacji, odpowiedzialny za inicjalizację interfejsu GTK, zarządzanie wątkiem kamery oraz obsługę zdarzeń.
+    \item \texttt{biometric\_system.py}: Serce aplikacji. Zawiera klasę \texttt{BiometricSystem}, która orkiestruje działanie pozostałych komponentów, zarządza sesjami użytkowników i implementuje główną logikę biznesową.
+    \item \texttt{face\_utils.py}: Moduł odpowiedzialny za operacje związane z rozpoznawaniem twarzy, takie jak kodowanie i porównywanie wektorów cech.
+    \item \texttt{emotion\_analyzer.py}: Kluczowy moduł zawierający autorską implementację algorytmu do analizy emocji na podstawie geometrycznych relacji między punktami charakterystycznymi twarzy.
+    \item \texttt{config.py}: Plik konfiguracyjny, przechowujący stałe i ustawienia aplikacji.
+\end{itemize}
+
+Na rysunku \ref{fig:placeholder} przedstawiono schemat blokowy architektury systemu.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/placeholder.eps}
+\caption{Schemat architektury systemu biometrycznego.}
+\label{fig:placeholder}
+\end{figure}

@@ -1,0 +1,21 @@
+\begin{thebibliography}{1}
+
+\bibitem{dlib_library}
+Davis~E. King.
+\newblock Dlib-ml: A machine learning toolkit.
+\newblock In {\em Journal of Machine Learning Research}, volume~10, pages
+  1755--1758, 2009.
+
+\bibitem{mediapipe}
+Camillo Lugaresi, Jiuqiang Tang, Hadon Nash, Chris McClanahan, Esha Uboweja,
+  Michael Hays, Fan Zhang, Chuo-Ling Chang, Ming Yong, Juhyun Lee, Wan-Teh
+  Chang, Wei Hua, Manfred Georg, and Matthias Grundmann.
+\newblock {MediaPipe}: A framework for building perception pipelines.
+\newblock 2019.
+
+\bibitem{opencv_library}
+{OpenCV team}.
+\newblock {Open Source Computer Vision Library}.
+\newblock \url{https://opencv.org}, 2023.
+
+\end{thebibliography}

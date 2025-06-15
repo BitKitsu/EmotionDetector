@@ -1,0 +1,182 @@
+\chapter{Autorska implementacja}
+\label{chap:implementacja}
+
+Najważniejszym elementem projektu, stanowiącym o jego wartości inżynierskiej, jest autorska implementacja kluczowych mechanizmów, które wykraczają poza standardowe użycie gotowych bibliotek. Poniżej opisano najważniejsze z nich.
+
+\section{Zarządzanie sesją i danymi biometrycznymi}
+Zaprojektowano i zaimplementowano własny system zarządzania danymi użytkowników. Służy do tego klasa \texttt{UserSession} w module \texttt{biometric\_system.py}. Przechowuje ona kompleksowe informacje o stanie interakcji użytkownika z systemem, takie jak:
+\begin{itemize}
+    \item Identyfikator użytkownika i jego stan uwierzytelnienia (np. zalogowany, w trakcie logowania).
+    \item Historię wykrytych emocji, co pozwala na analizę trendów w zachowaniu.
+    \item Spersonalizowaną bazę biometryczną (baseline) dla neutralnego wyrazu twarzy.
+    \item Licznik prób uwierzytelnienia w celu zabezpieczenia przed atakami.
+\end{itemize}
+
+Stworzono również własny mechanizm serializacji i deserializacji obiektów \texttt{UserSession} do formatu JSON. Dzięki temu stan systemu jest trwale zapisywany na dysku i może być odtworzony po ponownym uruchomieniu aplikacji. Jest to przykład własnej implementacji warstwy zarządzania danymi.
+
+\section{Optymalizacja wydajności poprzez śledzenie obiektów}
+Pełne rozpoznawanie twarzy w każdej klatce wideo jest operacją kosztowną obliczeniowo. Aby zapewnić płynne działanie aplikacji (wysoką liczbę klatek na sekundę), zaimplementowano autorski mechanizm optymalizacyjny. Polega on na inteligentnym przełączaniu się między dwoma trybami:
+\begin{enumerate}
+    \item \textbf{Pełne rozpoznawanie}: Wykonywane co kilkadziesiąt klatek lub gdy w scenie pojawi się nowa osoba. Polega na detekcji wszystkich twarzy, ekstrakcji ich cech i porównaniu z bazą danych.
+    \item \textbf{Śledzenie (tracking)}: Po pomyślnym rozpoznaniu użytkownika, system inicjuje szybki algorytm śledzący (tracker), który w kolejnych klatkach jedynie aktualizuje pozycję ramki otaczającej twarz. Jest to operacja znacznie mniej wymagająca obliczeniowo.
+\end{enumerate}
+Logika ta, zawarta w metodach \texttt{\_update\_trackers} i \texttt{\_run\_full\_recognition}, znacząco redukuje obciążenie procesora i jest kluczowym elementem autorskiej implementacji.
+
+\section{Autorski algorytm analizy emocji}
+Moduł \texttt{emotion\_analyzer.py} stanowi w całości autorskie rozwiązanie problemu analizy emocji. Mimo iż do detekcji siatki punktów na twarzy wykorzystano bibliotekę MediaPipe, cała interpretacja tych danych jest zaimplementowana od podstaw.
+
+\subsection{Kalibracja spersonalizowanego modelu}
+Kluczową innowacją jest mechanizm kalibracji. System nie opiera się na uniwersalnym modelu emocji, lecz tworzy spersonalizowaną \textbf{linię bazową (baseline)} dla każdego użytkownika. Proces kalibracji, uruchamiany przez użytkownika, polega na zebraniu kilkudziesięciu próbek jego neutralnego wyrazu twarzy. Następnie system oblicza średnie odległości między kluczowymi punktami (np. kącikami ust, brwiami). Te uśrednione wartości stają się punktem odniesienia, względem którego analizowane są późniejsze zmiany w mimice. Dzięki temu system jest odporny na indywidualne różnice w anatomii twarzy.
+
+\subsection{Geometryczna analiza cech}
+Emocje są rozpoznawane na podstawie zmian w geometrii twarzy. Zaimplementowano funkcję \texttt{\_calculate\_distances}, która oblicza znormalizowane odległości i stosunki między punktami charakterystycznymi, odpowiadające konkretnym ruchom mięśni twarzy, np.:
+\begin{itemize}
+    \item \textbf{Uśmiech}: Stosunek odległości między kącikami ust a szerokością ust.
+    \item \textbf{Zdziwienie}: Stopień otwarcia oczu i ust.
+    \item \textbf{Złość}: Odległość między brwiami (zmarszczenie).
+\end{itemize}
+
+\subsection{Wnioskowanie oparte na regułach}
+Ostateczna klasyfikacja emocji odbywa się za pomocą prostego, autorskiego systemu regułowego opartego na wagach (słownik \texttt{EMOTION\_WEIGHTS}). Znormalizowane cechy geometryczne są mapowane na poszczególne kategorie emocji. Takie podejście, choć prostsze od głębokich sieci neuronowych, jest w pełni interpretowalne i niezwykle wydajne, co jest kluczowe w zastosowaniach czasu rzeczywistego.
+
+\section{Przykładowy listing kodu}
+Poniżej przedstawiono kluczowy fragment funkcji \texttt{\_calculate\_distances} z modułu \texttt{emotion\_analyzer.py}, która oblicza odległości pomiędzy punktami charakterystycznymi twarzy w celu wyekstrahowania cech geometrycznych.
+
+\begin{lstlisting}[style=stylePython, caption={Kluczowy fragment funkcji \texttt{\_calculate\_distances}}, label={lst:calc_dist}]
+# ...
+    def _calculate_distances(self, landmarks, frame_shape: Tuple[int, int]) -> Dict[str, float]:
+        """Oblicza odległości między punktami charakterystycznymi twarzy."""
+        p = lambda idx: self._get_landmark_point(landmarks, idx, frame_shape)
+        # Usta
+        lip_left, lip_right = p(self.LIPS_LEFT), p(self.LIPS_RIGHT)
+        mouth_top, mouth_bottom = p(self.MOUTH_TOP), p(self.MOUTH_BOTTOM)
+        # Brwi
+        brow_left, brow_right = p(self.BROW_LEFT), p(self.BROW_RIGHT)
+        # Oczy
+        eye_left, eye_right = p(self.EYE_LEFT), p(self.EYE_RIGHT)
+        # Nos
+        nose = p(self.NOSE_TIP)
+
+        def dist(a, b):
+            return np.linalg.norm(np.array(a) - np.array(b))
+
+        features = {
+            'smile': dist(lip_left, lip_right) / dist(mouth_top, mouth_bottom),
+            'brow_furrow': dist(brow_left, brow_right) / dist(lip_left, lip_right),
+            'eye_open': dist(eye_left, eye_right) / dist(brow_left, brow_right),
+            'mouth_open': dist(mouth_top, mouth_bottom) / dist(lip_left, lip_right)
+        }
+        return features
+# ...
+\end{lstlisting}
+
+Dzięki zastosowaniu pakietu \texttt{listings} kod jest łatwy do czytania i estetycznie wkomponowany w dokument.
+
+\subsection{Wątek przechwytywania wideo}
+Listing~\ref{lst:capture_thread} przedstawia klasę \texttt{CaptureThread}, która działa w oddzielnym wątku i odpowiada za pobieranie klatek z kamery oraz delegowanie rozpoznawania twarzy do systemu biometrycznego.
+
+\begin{lstlisting}[style=stylePython, caption={Klasa \texttt{CaptureThread}}, label={lst:capture_thread}]
+class CaptureThread(Thread):
+    def run(self):
+        cap = cv2.VideoCapture(self.camera_id)
+        while self.running:
+            ret, frame = cap.read()
+            if not ret:
+                continue
+            # Rozpoznaj twarz i emocje w tle
+            session = self.system.authenticate_user(frame)
+            # Przechowuj wyniki w sposób bezpieczny dla wątków
+            with self.frame_lock:
+                self.latest_frame = frame
+                self.latest_session = session
+        cap.release()
+\end{lstlisting}
+
+\subsection{Rejestracja nowych użytkowników}
+Metoda \texttt{register\_face} (listing~\ref{lst:register_face}) koduje cechy twarzy i zapisuje je w bazie danych w celu przyszłego uwierzytelniania.
+
+\begin{lstlisting}[style=stylePython, caption={Metoda \texttt{register\_face}}, label={lst:register_face}]
+logger.info(f"Rozpoczęcie rejestracji użytkownika: {name}")
+# Skaluj obraz dla wydajności
+small_frame = cv2.resize(image, (0, 0), fx=0.5, fy=0.5)
+rgb_image = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+# Lokalizuj twarz na zmniejszonym obrazie
+face_locations = face_recognition.face_locations(
+    rgb_image,
+    number_of_times_to_upsample=self.upsample,
+    model=self.model
+)
+# Rejestracja wymaga dokładnie jednej twarzy
+if len(face_locations) != 1:
+    logger.warning("Rejestracja wymaga dokładnie jednej twarzy w kadrze.")
+    return False
+# Zakoduj cechy twarzy
+face_encoding = face_recognition.face_encodings(rgb_image, face_locations)[0]
+self.known_face_encodings.append(face_encoding)
+self.known_face_names.append(name)
+self._save_known_faces()
+logger.info(f"Zarejestrowano użytkownika: {name}")
+return True
+\end{lstlisting}
+
+\subsection{Proces uwierzytelniania}
+Listing~\ref{lst:authenticate_user} prezentuje kluczowe fragmenty funkcji \texttt{authenticate\_user}, w której łączone są optymalizacje oparte na trackerach z pełnym rozpoznawaniem twarzy.
+
+\begin{lstlisting}[style=stylePython, caption={Metoda \texttt{authenticate\_user}}, label={lst:authenticate_user}]
+self._update_fps()
+self.frames_since_last_full_recognition += 1
+face_results = []
+
+# 1. Aktualizacja istniejących trackerów (szybka ścieżka)
+if self.active_trackers:
+    face_results = self._update_trackers(frame)
+
+# 2. Pełne rozpoznawanie co N klatek lub gdy brak trackerów
+if not self.active_trackers or \
+   self.frames_since_last_full_recognition >= self.recognition_interval:
+    self.frames_since_last_full_recognition = 0
+    small_frame = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+    face_results = self._run_full_recognition(frame, small_frame)
+
+# 3. Aktualizacja bieżącej sesji
+session = self.authenticate_user_with_results(frame, face_results)
+if session:
+    session.face_results = face_results
+return session
+\end{lstlisting}
+
+\section{Instrukcja uruchomienia i obsługi}
+Poniższe kroki opisują, jak przygotować środowisko oraz uruchomić aplikację biometryczną.
+\begin{enumerate}
+    \item \textbf{Klonowanie repozytorium}\footnote{Wymaga zainstalowanego \texttt{git}}:
+    \begin{lstlisting}[style=stylePython]
+    git clone https://github.com/USER/Projekt_BSZ.git
+    cd Projekt_BSZ
+    \end{lstlisting}
+    \item \textbf{Tworzenie i aktywacja wirtualnego środowiska (opcjonalnie)}:
+    \begin{lstlisting}[style=stylePython]
+    python -m venv venv
+    source venv/bin/activate    # Linux / macOS
+    venv\Scripts\activate.bat   # Windows
+    \end{lstlisting}
+    \item \textbf{Instalacja zależności} (Python 3.9+):
+    \begin{lstlisting}[style=stylePython]
+    pip install -r requirements.txt
+    \end{lstlisting}
+    \item \textbf{Pobranie modelu dlib} \texttt{shape\_predictor\_68\_face\_landmarks.dat} (\autoref{lst:calc_dist}) oraz umieszczenie w katalogu głównym projektu:
+    \begin{lstlisting}[style=stylePython]
+    wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
+    bunzip2 shape_predictor_68_face_landmarks.dat.bz2
+    mv shape_predictor_68_face_landmarks.dat Projekt_BSZ/
+    \end{lstlisting}
+    \item \textbf{Uruchomienie aplikacji}:
+    \begin{lstlisting}[style=stylePython]
+    python main.py
+    \end{lstlisting}
+    \item \textbf{Rejestracja użytkownika}: wybierz przycisk \textit{Register} w interfejsie i postępuj zgodnie z komunikatami.
+    \item \textbf{Uwierzytelnianie}: po rejestracji system automatycznie rozpocznie proces rozpoznawania twarzy i analizy emocji.
+\end{enumerate}
+
+% \begin{figure}[h!]
+\section{Zależność od pliku \texttt{shape\_predictor\_68\_face\_landmarks.dat}}
+Algorytm rozpoznawania twarzy korzysta z pliku z pretrenowanym modelem detekcji punktów charakterystycznych twarzy dostarczonego przez bibliotekę \textbf{dlib}. Model ten można pobrać z oficjalnej strony projektu pod adresem: \url{http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2}. Po rozpakowaniu należy umieścić plik w katalogu głównym projektu, aby moduł \texttt{face\_utils.py} mógł go załadować podczas inicjalizacji.
