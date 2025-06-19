@@ -1,14 +1,22 @@
 \chapter{Podsumowanie}
 \label{chap:podsumowanie}
 
-W ramach niniejszego projektu z sukcesem zrealizowano wszystkie postawione cele. Zbudowano w pełni funkcjonalny, wydajny system biometryczny, który integruje rozpoznawanie twarzy z autorską implementacją analizy emocji. Projekt stanowi dowód na możliwość tworzenia zaawansowanych rozwiązań informatycznych poprzez umiejętne łączenie istniejących narzędzi z własnym, oryginalnym wkładem programistycznym.
+Celem niniejszego projektu było zaprojektowanie i zaimplementowanie kompletnego systemu biometrycznego, którego fundamentem jest autorski mechanizm zarządzania danymi i sesją użytkownika. Cel ten został w pełni osiągnięty. Stworzono aplikację, która nie tylko realizuje funkcje rozpoznawania twarzy i analizy emocji, ale przede wszystkim czyni to w oparciu o samodzielnie opracowaną logikę obsługi danych, co stanowiło główne wyzwanie inżynierskie.
 
-Kluczowe osiągnięcia projektu to:
+Najważniejszym rezultatem pracy jest spójny system, w skład którego wchodzą:
 \begin{itemize}
-    \item Stworzenie modułowej i skalowalnej architektury aplikacji.
-    \item Implementacja własnego systemu zarządzania danymi biometrycznymi użytkowników.
-    \item Opracowanie innowacyjnego, spersonalizowanego mechanizmu analizy emocji opartego na kalibracji i analizie cech geometrycznych twarzy.
-    \item Zastosowanie skutecznych technik optymalizacji wydajności, które zapewniają działanie systemu w czasie rzeczywistym.
+    \item Moduł do rejestracji i uwierzytelniania użytkowników na podstawie wektorów cech twarzy, przechowujący dane w lokalnej bazie.
+    \item Autorski system zarządzania sesją, który zapewnia trwałość danych (m.in. zapisanych wektorów cech i skalibrowanych linii bazowych emocji) pomiędzy uruchomieniami aplikacji.
+    \item Mechanizm spersonalizowanej analizy emocji, który dzięki indywidualnej kalibracji dostosowuje się do mimiki konkretnej osoby.
 \end{itemize}
 
-Projekt ten nie tylko spełnia wymagania zaliczeniowe, ale również stanowi solidną podstawę do dalszych badań i rozwoju, w tym potencjalnej pracy inżynierskiej lub publikacji naukowej.
+Płynne działanie aplikacji w czasie rzeczywistym, uzyskane dzięki inteligentnemu przełączaniu między trybami rozpoznawania i śledzenia, nie było celem samym w sobie, lecz naturalną konsekwencją przyjętej architektury zorientowanej na zarządzanie stanem sesji. To właśnie logika biznesowa decyduje, jakie operacje są w danym momencie niezbędne, co prowadzi do optymalnego wykorzystania zasobów.
+
+Zaprojektowany system, dzięki swojej modułowej budowie i elastyczności, posiada szeroki potencjał praktycznych zastosowań. Może stanowić fundament dla zaawansowanych systemów kontroli dostępu. Innym obszarem zastosowań są inteligentne interfejsy człowiek-komputer (HCI), które mogłyby dynamicznie adaptować swoje działanie do nastroju użytkownika, np. w systemach e-learningowych lub aplikacjach terapeutycznych.
+
+Praca stanowi również solidną podstawę do dalszego rozwoju. Możliwe kierunki obejmują:
+\begin{itemize}
+    \item Rozszerzenie systemu o dodatkowe modalności biometryczne, takie jak rozpoznawanie głosu czy analiza tęczówki, w celu stworzenia wielomodalnego systemu uwierzytelniania.
+    \item Przeprowadzenie formalnych testów użyteczności (UX) oraz skuteczności systemu w warunkach zbliżonych do rzeczywistych, z udziałem zróżnicowanej grupy użytkowników.
+    \item Rozbudowę interfejsu graficznego o zaawansowane wizualizacje danych biometrycznych i wyników analizy emocji w czasie rzeczywistym.
+\end{itemize}

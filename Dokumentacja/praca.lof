@@ -1,9 +1,12 @@
 \babel@toc {polish}{}\relax 
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces Schemat architektury systemu biometrycznego.}}{8}{figure.caption.1}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Schemat blokowy architektury systemu biometrycznego.}}{8}{figure.caption.1}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Okno dialogowe wyboru kamery.}}{9}{figure.caption.2}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Główny interfejs aplikacji z zidentyfikowanym użytkownikiem.}}{10}{figure.caption.3}%
+\contentsline {figure}{\numberline {2.4}{\ignorespaces Proces rejestracji nowego użytkownika.}}{10}{figure.caption.4}%
 \addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Interfejs w momencie wykrycia twarzy, która nie została dopasowana do żadnego zarejestrowanego użytkownika.}}{12}{figure.caption.5}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Zrzut ekranu głównego okna aplikacji.}}{14}{figure.caption.2}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces Wykres porównujący wydajność (FPS) systemu z włączoną i wyłączoną optymalizacją śledzenia. (Placeholder)}}{15}{figure.caption.3}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Porównanie średniej wydajności systemu. Wysoka liczba klatek na sekundę jest bezpośrednim wynikiem inteligentnego zarządzania operacjami rozpoznawania w ramach sesji użytkownika.}}{20}{figure.caption.6}%
 \addvspace {10\p@ }

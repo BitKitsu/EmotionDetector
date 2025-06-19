@@ -1,36 +1,45 @@
-\chapter{Wyniki i dyskusja}
-\label{chap:wyniki}
+\chapter{Wyniki i analiza}
+\label{ch:wyniki}
 
-Przeprowadzone testy funkcjonalne potwierdziły poprawność działania zaimplementowanego systemu. Aplikacja jest w stanie w czasie rzeczywistym uwierzytelniać zarejestrowanych użytkowników oraz analizować ich emocje z zadowalającą dokładnością. Na rysunku \ref{fig:placeholder_app} przedstawiono zrzut ekranu działającej aplikacji.
+W niniejszym rozdziale zaprezentowano kluczowe wyniki uzyskane podczas testowania zaimplementowanego systemu. Główny nacisk położono na ocenę skuteczności autorskiego systemu zarządzania sesją i danymi biometrycznymi, który stanowił centralny element projektu. Analizie poddano zarówno poprawność działania mechanizmów zapisu i odczytu danych, jak i wydajność wynikającą z zastosowanych rozwiązań.
 
-\begin{figure}[h!]
-\centering
-\includegraphics[width=0.8\textwidth]{figures/placeholder.eps}
-\caption{Zrzut ekranu głównego okna aplikacji.}
-\label{fig:placeholder_app}
-\end{figure}
+\section{Skuteczność autorskiego systemu zarządzania danymi}
 
-\section{Wydajność systemu}
-Zastosowanie autorskiego mechanizmu optymalizacji opartego na trackerach pozwoliło na osiągnięcie wysokiej wydajności. Na komputerze testowym (specyfikacja do uzupełnienia) system działał ze średnią prędkością 20-25 klatek na sekundę (FPS), co zapewnia płynne działanie interfejsu i analizy wideo. Na wykresie \ref{fig:fps_chart} przedstawiono porównanie wydajności systemu z włączoną i wyłączoną optymalizacją.
-
-\begin{figure}[h!]
-\centering
-\includegraphics[width=0.9\textwidth]{figures/placeholder.eps}
-\caption{Wykres porównujący wydajność (FPS) systemu z włączoną i wyłączoną optymalizacją śledzenia. (Placeholder)}
-\label{fig:fps_chart}
-\end{figure}
-
-\section{Możliwości implementacyjne i kierunki rozwoju}
-Zaprojektowany system posiada duży potencjał praktycznego wykorzystania. Może być zastosowany w takich obszarach jak:
+Kluczowym celem projektu było stworzenie niezależnego mechanizmu do obsługi danych biometrycznych użytkowników. W ramach testów potwierdzono jego pełną funkcjonalność:
 \begin{itemize}
-    \item \textbf{Systemy kontroli dostępu}: Zabezpieczanie dostępu do pomieszczeń lub systemów komputerowych.
-    \item \textbf{Inteligentne interfejsy}: Aplikacje, które adaptują swoje działanie do stanu emocjonalnego użytkownika (np. w grach komputerowych, systemach e-learningowych).
-    \item \textbf{Badania psychologiczne}: Narzędzie do monitorowania reakcji emocjonalnych uczestników badań.
+    \item \textbf{Trwałość sesji użytkownika:} Zaimplementowana klasa \texttt{UserSession} oraz mechanizmy serializacji do formatu JSON działają poprawnie. Po ponownym uruchomieniu aplikacji, system prawidłowo wczytuje zapisane dane, takie jak wektory cech twarzy oraz spersonalizowane linie bazowe dla emocji. Umożliwia to zachowanie ciągłości pracy bez potrzeby ponownej rejestracji czy kalibracji.
+    \item \textbf{Personalizacja analizy emocji:} Potwierdzono, że mechanizm kalibracji neutralnego wyrazu twarzy i tworzenia indywidualnej linii bazowej działa zgodnie z założeniami. Umożliwia to systemowi adaptację do unikalnej mimiki użytkownika, co stanowi podstawę do spersonalizowanej i potencjalnie trafniejszej analizy emocji.
+\end{itemize}
+Poprawna obsługa danych biometrycznych stanowi fundament dla niezawodności i użyteczności całego systemu.
+
+\section{Analiza wydajności jako efekt inteligentnego zarządzania sesją}
+
+Wysoka wydajność aplikacji w czasie rzeczywistym nie była celem samym w sobie, lecz wynikiem zastosowania inteligentnej logiki zarządzania stanem. Zamiast przeprowadzać kosztowne obliczeniowo operacje w każdej klatce, system, opierając się na informacjach z sesji użytkownika, decyduje, kiedy należy wykonać pełne rozpoznawanie, a kiedy wystarczy lżejsze śledzenie.
+
+Aby zobrazować korzyści płynące z tego podejścia, przeprowadzono pomiary średniej liczby klatek na sekundę (FPS) w dwóch scenariuszach:
+\begin{itemize}
+    \item \textbf{Bez inteligentnego zarządzania}: System w każdej klatce wideo wykonuje pełną detekcję i próbę rozpoznania wszystkich twarzy. W tym trybie uzyskano wydajność na poziomie 0.7-1.5 FPS.
+    \item \textbf{Z inteligentnym zarządzaniem}: System wykorzystuje śledzenie obiektów i wykonuje pełne rozpoznawanie tylko w zdefiniowanych interwałach, zarządzanych przez logikę sesji. Ten tryb pozwolił osiągnąć wydajność rzędu 6-8 FPS.
 \end{itemize}
 
-Możliwe kierunki dalszego rozwoju projektu obejmują:
-\begin{itemize}
-    \item Rozbudowę algorytmu analizy emocji o bardziej zaawansowane modele uczenia maszynowego (np. SVM, sieci neuronowe) trenowane na zebranych danych.
-    \item Dodanie kolejnych modalności biometrycznych, takich jak rozpoznawanie głosu, w celu stworzenia systemu multimodalnego.
-    \item Zwiększenie odporności na próby oszustwa (spoofing) poprzez implementację algorytmów detekcji żywotności (liveness detection).
-\end{itemize}
+Wyniki pomiarów, uśrednione dla czytelności, zostały przedstawione na wykresie \ref{fig:wydajnosc_fps}.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            enlargelimits=0.15,
+            ylabel={Średnia liczba klatek na sekundę (FPS)},
+            symbolic x coords={Bez inteligentnego zarządzania, Z inteligentnym zarządzaniem},
+            xtick=data,
+            nodes near coords,
+            nodes near coords align={vertical},
+            bar width=40pt,
+            ]
+        \addplot coordinates {(Bez inteligentnego zarządzania, 1.1) (Z inteligentnym zarządzaniem, 7)};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Porównanie średniej wydajności systemu. Wysoka liczba klatek na sekundę jest bezpośrednim wynikiem inteligentnego zarządzania operacjami rozpoznawania w ramach sesji użytkownika.}
+    \label{fig:wydajnosc_fps}
+\end{figure}

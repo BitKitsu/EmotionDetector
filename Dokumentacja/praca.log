@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.4.6)  15 JUN 2025 13:40
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.4.6)  19 JUN 2025 15:00
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -706,7 +706,405 @@ File: csquotes.cfg
 (/opt/texlive/2025/texmf-dist/tex/latex/psnfss/courier.sty
 Package: courier 2020/03/25 PSNFSS-v9.3 (WaS) 
 )
-(/opt/texlive/2025/texmf-dist/tex/latex/listings/lstlang1.sty
+(/opt/texlive/2025/texmf-dist/tex/latex/pgf/frontendlayer/tikz.sty
+(/opt/texlive/2025/texmf-dist/tex/latex/pgf/basiclayer/pgf.sty
+(/opt/texlive/2025/texmf-dist/tex/latex/pgf/utilities/pgfrcs.sty
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/utilities/pgfutil-common.tex
+\pgfutil@everybye=\toks45
+\pgfutil@tempdima=\dimen285
+\pgfutil@tempdimb=\dimen286
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/utilities/pgfutil-latex.def
+\pgfutil@abb=\box76
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/utilities/pgfrcs.code.tex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/pgf.revision.tex)
+Package: pgfrcs 2023-01-15 v3.1.10 (3.1.10)
+))
+Package: pgf 2023-01-15 v3.1.10 (3.1.10)
+
+(/opt/texlive/2025/texmf-dist/tex/latex/pgf/basiclayer/pgfcore.sty
+(/opt/texlive/2025/texmf-dist/tex/latex/pgf/systemlayer/pgfsys.sty
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/systemlayer/pgfsys.code.tex
+Package: pgfsys 2023-01-15 v3.1.10 (3.1.10)
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex
+\pgfkeys@pathtoks=\toks46
+\pgfkeys@temptoks=\toks47
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/utilities/pgfkeyslibraryfiltered.
+code.tex
+\pgfkeys@tmptoks=\toks48
+))
+\pgf@x=\dimen287
+\pgf@y=\dimen288
+\pgf@xa=\dimen289
+\pgf@ya=\dimen290
+\pgf@xb=\dimen291
+\pgf@yb=\dimen292
+\pgf@xc=\dimen293
+\pgf@yc=\dimen294
+\pgf@xd=\dimen295
+\pgf@yd=\dimen296
+\w@pgf@writea=\write3
+\r@pgf@reada=\read3
+\c@pgf@counta=\count357
+\c@pgf@countb=\count358
+\c@pgf@countc=\count359
+\c@pgf@countd=\count360
+\t@pgf@toka=\toks49
+\t@pgf@tokb=\toks50
+\t@pgf@tokc=\toks51
+\pgf@sys@id@count=\count361
+ (/opt/texlive/2025/texmf-dist/tex/generic/pgf/systemlayer/pgf.cfg
+File: pgf.cfg 2023-01-15 v3.1.10 (3.1.10)
+)
+Driver file for pgf: pgfsys-pdftex.def
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/systemlayer/pgfsys-pdftex.def
+File: pgfsys-pdftex.def 2023-01-15 v3.1.10 (3.1.10)
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/systemlayer/pgfsys-common-pdf.def
+File: pgfsys-common-pdf.def 2023-01-15 v3.1.10 (3.1.10)
+)))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.t
+ex
+File: pgfsyssoftpath.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgfsyssoftpath@smallbuffer@items=\count362
+\pgfsyssoftpath@bigbuffer@items=\count363
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.t
+ex
+File: pgfsysprotocol.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)) (/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcore.code.tex
+Package: pgfcore 2023-01-15 v3.1.10 (3.1.10)
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathutil.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathparser.code.tex
+\pgfmath@dimen=\dimen297
+\pgfmath@count=\count364
+\pgfmath@box=\box77
+\pgfmath@toks=\toks52
+\pgfmath@stack@operand=\toks53
+\pgfmath@stack@operation=\toks54
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.basic.code.
+tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.trigonometr
+ic.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.random.code
+.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.comparison.
+code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.base.code.t
+ex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.round.code.
+tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.misc.code.t
+ex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.integerarit
+hmetics.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathcalc.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmathfloat.code.tex
+\c@pgfmathroundto@lastzeros=\count365
+))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfint.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepoints.code.tex
+File: pgfcorepoints.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgf@picminx=\dimen298
+\pgf@picmaxx=\dimen299
+\pgf@picminy=\dimen300
+\pgf@picmaxy=\dimen301
+\pgf@pathminx=\dimen302
+\pgf@pathmaxx=\dimen303
+\pgf@pathminy=\dimen304
+\pgf@pathmaxy=\dimen305
+\pgf@xx=\dimen306
+\pgf@xy=\dimen307
+\pgf@yx=\dimen308
+\pgf@yy=\dimen309
+\pgf@zx=\dimen310
+\pgf@zy=\dimen311
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathconstruct.c
+ode.tex
+File: pgfcorepathconstruct.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgf@path@lastx=\dimen312
+\pgf@path@lasty=\dimen313
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathusage.code.
+tex
+File: pgfcorepathusage.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgf@shorten@end@additional=\dimen314
+\pgf@shorten@start@additional=\dimen315
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorescopes.code.tex
+File: pgfcorescopes.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgfpic=\box78
+\pgf@hbox=\box79
+\pgf@layerbox@main=\box80
+\pgf@picture@serial@count=\count366
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcoregraphicstate.co
+de.tex
+File: pgfcoregraphicstate.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgflinewidth=\dimen316
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcoretransformations
+.code.tex
+File: pgfcoretransformations.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgf@pt@x=\dimen317
+\pgf@pt@y=\dimen318
+\pgf@pt@temp=\dimen319
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorequick.code.tex
+File: pgfcorequick.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreobjects.code.te
+x
+File: pgfcoreobjects.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepathprocessing.
+code.tex
+File: pgfcorepathprocessing.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorearrows.code.tex
+File: pgfcorearrows.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgfarrowsep=\dimen320
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreshade.code.tex
+File: pgfcoreshade.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgf@max=\dimen321
+\pgf@sys@shading@range@num=\count367
+\pgf@shadingcount=\count368
+) (/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreimage.code.te
+x
+File: pgfcoreimage.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcoreexternal.code.t
+ex
+File: pgfcoreexternal.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgfexternal@startupbox=\box81
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorelayers.code.tex
+File: pgfcorelayers.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcoretransparency.co
+de.tex
+File: pgfcoretransparency.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorepatterns.code.t
+ex
+File: pgfcorepatterns.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/basiclayer/pgfcorerdf.code.tex
+File: pgfcorerdf.code.tex 2023-01-15 v3.1.10 (3.1.10)
+))) (/opt/texlive/2025/texmf-dist/tex/generic/pgf/modules/pgfmoduleshapes.code.
+tex
+File: pgfmoduleshapes.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgfnodeparttextbox=\box82
+) (/opt/texlive/2025/texmf-dist/tex/generic/pgf/modules/pgfmoduleplot.code.tex
+File: pgfmoduleplot.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)
+(/opt/texlive/2025/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-0-65.
+sty
+Package: pgfcomp-version-0-65 2023-01-15 v3.1.10 (3.1.10)
+\pgf@nodesepstart=\dimen322
+\pgf@nodesepend=\dimen323
+)
+(/opt/texlive/2025/texmf-dist/tex/latex/pgf/compatibility/pgfcomp-version-1-18.
+sty
+Package: pgfcomp-version-1-18 2023-01-15 v3.1.10 (3.1.10)
+)) (/opt/texlive/2025/texmf-dist/tex/latex/pgf/utilities/pgffor.sty
+(/opt/texlive/2025/texmf-dist/tex/latex/pgf/utilities/pgfkeys.sty
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex))
+(/opt/texlive/2025/texmf-dist/tex/latex/pgf/math/pgfmath.sty
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/utilities/pgffor.code.tex
+Package: pgffor 2023-01-15 v3.1.10 (3.1.10)
+\pgffor@iter=\dimen324
+\pgffor@skip=\dimen325
+\pgffor@stack=\toks55
+\pgffor@toks=\toks56
+))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/frontendlayer/tikz/tikz.code.tex
+Package: tikz 2023-01-15 v3.1.10 (3.1.10)
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/libraries/pgflibraryplothandlers.
+code.tex
+File: pgflibraryplothandlers.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgf@plot@mark@count=\count369
+\pgfplotmarksize=\dimen326
+)
+\tikz@lastx=\dimen327
+\tikz@lasty=\dimen328
+\tikz@lastxsaved=\dimen329
+\tikz@lastysaved=\dimen330
+\tikz@lastmovetox=\dimen331
+\tikz@lastmovetoy=\dimen332
+\tikzleveldistance=\dimen333
+\tikzsiblingdistance=\dimen334
+\tikz@figbox=\box83
+\tikz@figbox@bg=\box84
+\tikz@tempbox=\box85
+\tikz@tempbox@bg=\box86
+\tikztreelevel=\count370
+\tikznumberofchildren=\count371
+\tikznumberofcurrentchild=\count372
+\tikz@fig@count=\count373
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/modules/pgfmodulematrix.code.tex
+File: pgfmodulematrix.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\pgfmatrixcurrentrow=\count374
+\pgfmatrixcurrentcolumn=\count375
+\pgf@matrix@numberofcolumns=\count376
+)
+\tikz@expandcount=\count377
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikz
+librarytopaths.code.tex
+File: tikzlibrarytopaths.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikz
+libraryshapes.geometric.code.tex
+File: tikzlibraryshapes.geometric.code.tex 2023-01-15 v3.1.10 (3.1.10)
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/libraries/shapes/pgflibraryshapes
+.geometric.code.tex
+File: pgflibraryshapes.geometric.code.tex 2023-01-15 v3.1.10 (3.1.10)
+))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikz
+libraryarrows.code.tex
+File: tikzlibraryarrows.code.tex 2023-01-15 v3.1.10 (3.1.10)
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/libraries/pgflibraryarrows.code.t
+ex
+File: pgflibraryarrows.code.tex 2023-01-15 v3.1.10 (3.1.10)
+\arrowsize=\dimen335
+))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikz
+librarypositioning.code.tex
+File: tikzlibrarypositioning.code.tex 2023-01-15 v3.1.10 (3.1.10)
+)
+(/opt/texlive/2025/texmf-dist/tex/latex/pgfplots/pgfplots.sty
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplots.revision.tex)
+Package: pgfplots 2021/05/15 v1.18.1 Data Visualization (1.18.1)
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplots.code.tex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplotscore.code.tex
+\t@pgfplots@toka=\toks57
+\t@pgfplots@tokb=\toks58
+\t@pgfplots@tokc=\toks59
+\pgfplots@tmpa=\dimen336
+\c@pgfplots@coordindex=\count378
+\c@pgfplots@scanlineindex=\count379
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/sys/pgfplotssysgeneric.code.
+tex))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/libs/pgfplotslibrary.code.te
+x)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/oldpgfcompatib/pgfplotsoldpg
+fsupp_loader.code.tex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/libraries/pgflibraryfpu.code.tex)
+Package pgfplots: loading complementary utilities for your pgf version...
+\t@pgf@toka=\toks60
+\t@pgf@tokb=\toks61
+\t@pgf@tokc=\toks62
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/oldpgfcompatib/pgfplotsoldpg
+fsupp_pgfutil-common-lists.tex))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/util/pgfplotsutil.code.tex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotslistst
+ructure.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotslistst
+ructureext.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsarray.
+code.tex
+\c@pgfplotsarray@tmp=\count380
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsmatrix
+.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/numtable/pgfplotstableshared
+.code.tex
+\c@pgfplotstable@counta=\count381
+\t@pgfplotstable@a=\toks63
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/liststructure/pgfplotsdeque.
+code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/util/pgfplotsbinary.code.tex
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/util/pgfplotsbinary.data.cod
+e.tex))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/util/pgfplotsutil.verb.code.
+tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/libs/pgflibrarypgfplots.surf
+shading.code.tex
+\c@pgfplotslibrarysurf@no=\count382
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/sys/pgflibrarypgfplots.surfs
+hading.pgfsys-pdftex.def)))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/util/pgfplotscolormap.code.t
+ex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/util/pgfplotscolor.code.tex)
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplotsstackedplots.code.te
+x)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplotsplothandlers.code.te
+x
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplotsmeshplothandler.code
+.tex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplotsmeshplotimage.code.t
+ex)))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplots.scaling.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplotscoordprocessing.code
+.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplots.errorbars.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplots.markers.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplotsticks.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/pgfplots.paths.code.tex)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikz
+librarydecorations.code.tex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/modules/pgfmoduledecorations.code
+.tex
+\pgfdecoratedcompleteddistance=\dimen337
+\pgfdecoratedremainingdistance=\dimen338
+\pgfdecoratedinputsegmentcompleteddistance=\dimen339
+\pgfdecoratedinputsegmentremainingdistance=\dimen340
+\pgf@decorate@distancetomove=\dimen341
+\pgf@decorate@repeatstate=\count383
+\pgfdecorationsegmentamplitude=\dimen342
+\pgfdecorationsegmentlength=\dimen343
+)
+\tikz@lib@dec@box=\box87
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikz
+librarydecorations.pathmorphing.code.tex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/libraries/decorations/pgflibraryd
+ecorations.pathmorphing.code.tex))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikz
+librarydecorations.pathreplacing.code.tex
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/libraries/decorations/pgflibraryd
+ecorations.pathreplacing.code.tex))
+(/opt/texlive/2025/texmf-dist/tex/generic/pgfplots/libs/tikzlibrarypgfplots.con
+tourlua.code.tex)
+\pgfplots@numplots=\count384
+\pgfplots@xmin@reg=\dimen344
+\pgfplots@xmax@reg=\dimen345
+\pgfplots@ymin@reg=\dimen346
+\pgfplots@ymax@reg=\dimen347
+\pgfplots@zmin@reg=\dimen348
+\pgfplots@zmax@reg=\dimen349
+)
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikz
+libraryplotmarks.code.tex
+File: tikzlibraryplotmarks.code.tex 2023-01-15 v3.1.10 (3.1.10)
+
+(/opt/texlive/2025/texmf-dist/tex/generic/pgf/libraries/pgflibraryplotmarks.cod
+e.tex
+File: pgflibraryplotmarks.code.tex 2023-01-15 v3.1.10 (3.1.10)
+))) (/opt/texlive/2025/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2024/09/23 1.10c listings language file
 )
 (/opt/texlive/2025/texmf-dist/tex/latex/listings/lstlang2.sty
@@ -722,49 +1120,49 @@ Package csquotes Info: Redefining alias 'default' -> 'polish'.
 
 (/opt/texlive/2025/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count357
-\l__pdf_internal_box=\box76
+\l__color_backend_stack_int=\count385
+\l__pdf_internal_box=\box88
 )
 (./praca.aux
 Package babel Info: 'polish' activates 'polish' shorthands.
 (babel)             Reported  on input line 8.
  (./chapters/wstep.aux) (./chapters/architektura.aux)
 (./chapters/implementacja.aux) (./chapters/wyniki.aux)
-(./chapters/podsumowanie.aux) (./appendix/statement-A.aux))
+(./chapters/podsumowanie.aux))
 \openout1 = `praca.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 212.
-LaTeX Font Info:    ... okay on input line 212.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 212.
-LaTeX Font Info:    ... okay on input line 212.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 212.
-LaTeX Font Info:    ... okay on input line 212.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 212.
-LaTeX Font Info:    ... okay on input line 212.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 212.
-LaTeX Font Info:    ... okay on input line 212.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 212.
-LaTeX Font Info:    ... okay on input line 212.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 212.
-LaTeX Font Info:    ... okay on input line 212.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 212.
-LaTeX Font Info:    ... okay on input line 212.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 212.
-LaTeX Font Info:    ... okay on input line 212.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 217.
+LaTeX Font Info:    ... okay on input line 217.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 217.
+LaTeX Font Info:    ... okay on input line 217.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 217.
+LaTeX Font Info:    ... okay on input line 217.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 217.
+LaTeX Font Info:    ... okay on input line 217.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 217.
+LaTeX Font Info:    ... okay on input line 217.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 217.
+LaTeX Font Info:    ... okay on input line 217.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 217.
+LaTeX Font Info:    ... okay on input line 217.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 217.
+LaTeX Font Info:    ... okay on input line 217.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 217.
+LaTeX Font Info:    ... okay on input line 217.
 
 (/opt/texlive/2025/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count358
-\scratchdimen=\dimen285
-\scratchbox=\box77
-\nofMPsegments=\count359
-\nofMParguments=\count360
-\everyMPshowfont=\toks45
-\MPscratchCnt=\count361
-\MPscratchDim=\dimen286
-\MPnumerator=\count362
-\makeMPintoPDFobject=\count363
-\everyMPtoPDFconversion=\toks46
+\scratchcounter=\count386
+\scratchdimen=\dimen350
+\scratchbox=\box89
+\nofMPsegments=\count387
+\nofMParguments=\count388
+\everyMPshowfont=\toks64
+\MPscratchCnt=\count389
+\MPscratchDim=\dimen351
+\MPnumerator=\count390
+\makeMPintoPDFobject=\count391
+\everyMPtoPDFconversion=\toks65
 ) (/opt/texlive/2025/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
@@ -821,7 +1219,7 @@ File: translations-basic-dictionary-polish.trsl (polish translation file `trans
 lations-basic-dictionary')
 )
 Package translations Info: loading dictionary `translations-basic-dictionary' f
-or `polish'. on input line 212.
+or `polish'. on input line 217.
 
 (/opt/texlive/2025/texmf-dist/tex/latex/translations/translations-basic-diction
 ary-english.trsl
@@ -829,43 +1227,46 @@ File: translations-basic-dictionary-english.trsl (english translation file `tra
 nslations-basic-dictionary')
 )
 Package translations Info: loading dictionary `translations-basic-dictionary' f
-or `english'. on input line 212.
-Package hyperref Info: Link coloring OFF on input line 212.
+or `english'. on input line 217.
+Package hyperref Info: Link coloring OFF on input line 217.
  (./praca.out) (./praca.out)
-\@outlinefile=\write3
-\openout3 = `praca.out'.
+\@outlinefile=\write4
+\openout4 = `praca.out'.
 
-\c@lstlisting=\count364
+\c@lstlisting=\count392
+
+Package pgfplots notification 'compat/show suggested version=true': document ha
+s been generated with the most recent feature set (\pgfplotsset{compat=1.18}).
+
 LaTeX Font Info:    Trying to load font information for T1+phv on input line 21
-4.
-
+9.
 (/opt/texlive/2025/texmf-dist/tex/latex/psnfss/t1phv.fd
 File: t1phv.fd 2020/03/25 scalable font definitions for T1/phv.
 )
-LaTeX Font Info:    Trying to load font information for U+msa on input line 214
+LaTeX Font Info:    Trying to load font information for U+msa on input line 219
 .
 
 (/opt/texlive/2025/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 214
+LaTeX Font Info:    Trying to load font information for U+msb on input line 219
 .
 
 (/opt/texlive/2025/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-<figures/ur.jpg, id=106, 134.00063pt x 134.00063pt>
+<figures/ur.jpg, id=125, 134.00063pt x 134.00063pt>
 File: figures/ur.jpg Graphic file (type jpg)
 <use figures/ur.jpg>
-Package pdftex.def Info: figures/ur.jpg  used on input line 214.
+Package pdftex.def Info: figures/ur.jpg  used on input line 219.
 (pdftex.def)             Requested size: 93.79977pt x 93.79977pt.
 
-Overfull \hbox (1.90001pt too wide) in paragraph at lines 214--214
+Overfull \hbox (1.90001pt too wide) in paragraph at lines 219--219
 $[]$  $[]$ 
  []
 
 LaTeX Font Info:    Font shape `T1/phv/m/it' in size <14.4> not available
-(Font)              Font shape `T1/phv/m/sl' tried instead on input line 214.
+(Font)              Font shape `T1/phv/m/sl' tried instead on input line 219.
 
 
 [1
@@ -878,19 +1279,13 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.214 \titlepages
+l.219 \titlepages
                   [1
 
 
-] (./praca.toc
-LaTeX Font Info:    Trying to load font information for T1+pcr on input line 18
-.
-
-(/opt/texlive/2025/texmf-dist/tex/latex/psnfss/t1pcr.fd
-File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
-))
-\tf@toc=\write4
-\openout4 = `praca.toc'.
+] (./praca.toc)
+\tf@toc=\write5
+\openout5 = `praca.toc'.
 
 
 
@@ -916,132 +1311,154 @@ File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 
  (./chapters/architektura.tex
 Rozdzia\l  2.
-
+LaTeX Font Info:    Trying to load font information for T1+pcr on input line 12
+.
+(/opt/texlive/2025/texmf-dist/tex/latex/psnfss/t1pcr.fd
+File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
+)
 
 [7
 
 
 
 
-]
-Package epstopdf Info: Source file: <figures/placeholder.eps>
-(epstopdf)                    date: 2025-06-15 12:13:16
-(epstopdf)                    size: 138 bytes
-(epstopdf)             Output file: <figures/placeholder-eps-converted-to.pdf>
-(epstopdf)                    date: 2025-06-15 12:15:00
-(epstopdf)                    size: 4344 bytes
-(epstopdf)             Command: <repstopdf --outfile=figures/placeholder-eps-co
-nverted-to.pdf figures/placeholder.eps>
-(epstopdf)             \includegraphics on input line 31.
-Package epstopdf Info: Output file is already uptodate.
-<figures/placeholder-eps-converted-to.pdf, id=171, 100.375pt x 100.375pt>
-File: figures/placeholder-eps-converted-to.pdf Graphic file (type pdf)
-<use figures/placeholder-eps-converted-to.pdf>
-Package pdftex.def Info: figures/placeholder-eps-converted-to.pdf  used on inpu
-t line 31.
-(pdftex.def)             Requested size: 298.75264pt x 298.84367pt.
+] (/opt/texlive/2025/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2024/09/23 1.10c listings language file
 )
+(/opt/texlive/2025/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2024/09/23 1.10c listings language file
+)
+LaTeX Font Info:    Font shape `T1/pcr/m/it' in size <8> not available
+(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 71.
+
 
 Package babel Info: 'polish' activates 'polish' shorthands.
-(babel)             Reported  on input line 232.
-[8 <./figures/placeholder-eps-converted-to.pdf>]
+(babel)             Reported  on input line 81.
+[8]
+<figures/wybor_kamery.png, id=212, 331.2375pt x 247.67531pt>
+File: figures/wybor_kamery.png Graphic file (type png)
+<use figures/wybor_kamery.png>
+Package pdftex.def Info: figures/wybor_kamery.png  used on input line 100.
+(pdftex.def)             Requested size: 213.39568pt x 159.56227pt.
+<figures/uzytkownik_zidentyfikowany.png, id=215, 1031.35312pt x 648.17157pt>
+File: figures/uzytkownik_zidentyfikowany.png Graphic file (type png)
+<use figures/uzytkownik_zidentyfikowany.png>
+Package pdftex.def Info: figures/uzytkownik_zidentyfikowany.png  used on input 
+line 110.
+(pdftex.def)             Requested size: 426.79135pt x 268.22462pt.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+<figures/rejestracja_podanie_id.png, id=219, 565.36218pt x 187.45032pt>
+File: figures/rejestracja_podanie_id.png Graphic file (type png)
+<use figures/rejestracja_podanie_id.png>
+Package pdftex.def Info: figures/rejestracja_podanie_id.png  used on input line
+ 127.
+(pdftex.def)             Requested size: 128.0387pt x 42.45193pt.
+<figures/rejestracja_sukces.png, id=220, 372.64218pt x 224.33812pt>
+File: figures/rejestracja_sukces.png Graphic file (type png)
+<use figures/rejestracja_sukces.png>
+Package pdftex.def Info: figures/rejestracja_sukces.png  used on input line 134
+.
+(pdftex.def)             Requested size: 128.0387pt x 77.0818pt.
+<figures/rejestracja_blad.png, id=221, 510.40688pt x 224.33812pt>
+File: figures/rejestracja_blad.png Graphic file (type png)
+<use figures/rejestracja_blad.png>
+Package pdftex.def Info: figures/rejestracja_blad.png  used on input line 141.
+(pdftex.def)             Requested size: 128.0387pt x 56.27608pt.
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+)
+
+[9 <./figures/wybor_kamery.png>]
+
+[10 <./figures/uzytkownik_zidentyfikowany.png> <./figures/rejestracja_podanie_i
+d.png> <./figures/rejestracja_sukces.png> <./figures/rejestracja_blad.png>]
 \openout2 = `chapters/implementacja.aux'.
 
- (./chapters/implementacja.tex
+
+(./chapters/implementacja.tex
 Rozdzia\l  3.
-
-
-[9
-
-
-
-
-]
-Underfull \hbox (badness 10000) in paragraph at lines 43--44
-[]\T1/ptm/m/n/10 Poni»ej przed-sta-wiono klu-czowy frag-ment funk-cji \T1/pcr/m
-/n/10 _calculate_distances \T1/ptm/m/n/10 z mo-duªu
- []
-
-
-Underfull \hbox (badness 1242) in paragraph at lines 43--44
-\T1/pcr/m/n/10 emotion_analyzer.py\T1/ptm/m/n/10 , która ob-li-cza od-le-gªo-±c
-i po-mi¦-dzy punk-tami cha-rak-te-ry-stycz-nymi twa-
- []
-
 (/opt/texlive/2025/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2024/09/23 1.10c listings language file
 )
 Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 45.
+nput line 29.
+
+(./src/face_utils.py)
+
+[11
 
 
-[10]
 
-[11]
 
-[12]
-Overfull \hbox (53.38208pt too wide) in paragraph at lines 181--181
- |\T1/ptm/b/n/14.4 3.6. Za-le»-no±¢ od pliku \T1/pcr/b/n/14.4 shape_predictor_6
-8_face_landmarks.dat| 
+]
+<figures/uzytkownik_niezidentyfikowany_ponizej_progu.png, id=262, 1031.35312pt 
+x 648.17157pt>
+File: figures/uzytkownik_niezidentyfikowany_ponizej_progu.png Graphic file (typ
+e png)
+<use figures/uzytkownik_niezidentyfikowany_ponizej_progu.png>
+Package pdftex.def Info: figures/uzytkownik_niezidentyfikowany_ponizej_progu.pn
+g  used on input line 37.
+(pdftex.def)             Requested size: 426.79135pt x 268.22462pt.
+ (./src/biometric_system.py
+
+[12 <./figures/uzytkownik_niezidentyfikowany_ponizej_progu.png>])
+
+[13] (./src/emotion_analyzer.py)
+Underfull \hbox (badness 10000) in paragraph at lines 80--81
+[]\T1/ptm/m/n/10 Implementacja funk-cji \T1/pcr/m/n/10 _calculate_distances \T1
+/ptm/m/n/10 (li-sting []3.4[]) z mo-duªu
  []
 
-)
 
-[13]
+Underfull \hbox (badness 1603) in paragraph at lines 80--81
+\T1/pcr/m/n/10 emotion_analyzer.py \T1/ptm/m/n/10 ob-li-cza klu-czowe ce-chy ge
+o-me-tryczne na pod-sta-wie siatki twa-rzy, co
+ []
+
+(./src/emotion_analyzer.py
+
+[14]) (./src/main.py
+
+[15]) (./src/face_utils.py
+
+[16]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
+
+[17]))
+
+[18]
 \openout2 = `chapters/wyniki.aux'.
 
  (./chapters/wyniki.tex
 Rozdzia\l  4.
-Package epstopdf Info: Source file: <figures/placeholder.eps>
-(epstopdf)                    date: 2025-06-15 12:13:16
-(epstopdf)                    size: 138 bytes
-(epstopdf)             Output file: <figures/placeholder-eps-converted-to.pdf>
-(epstopdf)                    date: 2025-06-15 12:15:00
-(epstopdf)                    size: 4344 bytes
-(epstopdf)             Command: <repstopdf --outfile=figures/placeholder-eps-co
-nverted-to.pdf figures/placeholder.eps>
-(epstopdf)             \includegraphics on input line 8.
-Package epstopdf Info: Output file is already uptodate.
-File: figures/placeholder-eps-converted-to.pdf Graphic file (type pdf)
-<use figures/placeholder-eps-converted-to.pdf>
-Package pdftex.def Info: figures/placeholder-eps-converted-to.pdf  used on inpu
-t line 8.
-(pdftex.def)             Requested size: 341.43437pt x 341.53847pt.
-Package epstopdf Info: Source file: <figures/placeholder.eps>
-(epstopdf)                    date: 2025-06-15 12:13:16
-(epstopdf)                    size: 138 bytes
-(epstopdf)             Output file: <figures/placeholder-eps-converted-to.pdf>
-(epstopdf)                    date: 2025-06-15 12:15:00
-(epstopdf)                    size: 4344 bytes
-(epstopdf)             Command: <repstopdf --outfile=figures/placeholder-eps-co
-nverted-to.pdf figures/placeholder.eps>
-(epstopdf)             \includegraphics on input line 18.
-Package epstopdf Info: Output file is already uptodate.
-File: figures/placeholder-eps-converted-to.pdf Graphic file (type pdf)
-<use figures/placeholder-eps-converted-to.pdf>
-Package pdftex.def Info: figures/placeholder-eps-converted-to.pdf  used on inpu
-t line 18.
-(pdftex.def)             Requested size: 384.1096pt x 384.22714pt.
+Package pgfplots info on input line 39: Using 'lua backend=false' for axis: x c
+oord trafo unsupported.
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
+)
+
+[19
 
 
-[14
 
 
+]
 
-
-])
-
-[15]
+[20]
 \openout2 = `chapters/podsumowanie.aux'.
 
  (./chapters/podsumowanie.tex
 Rozdzia\l  5.
 )
 
-[16
+[21
 
 
 
@@ -1049,29 +1466,21 @@ Rozdzia\l  5.
 ]
 
 Package hyperref Warning: The anchor of a bookmark and its parent's must not
-(hyperref)                be the same. Added a new anchor on input line 241.
+(hyperref)                be the same. Added a new anchor on input line 246.
 
 (./praca.bbl)
 
-[17
+[22
 
 
 
 ] (./praca.lof)
-\tf@lof=\write5
-\openout5 = `praca.lof'.
+\tf@lof=\write6
+\openout6 = `praca.lof'.
 
 
 
-[18
-
-] (./praca.lot)
-\tf@lot=\write6
-\openout6 = `praca.lot'.
-
-
-
-[19
+[23
 
 ] (./praca.lol)
 \tf@lol=\write7
@@ -1079,14 +1488,12 @@ Package hyperref Warning: The anchor of a bookmark and its parent's must not
 
 
 
-[20
+[24
 
 
 
-]
-\openout2 = `appendix/statement-A.aux'.
 
- (./appendix/statement-A.tex
+] (./appendix/statement-A.tex
 Underfull \hbox (badness 10000) in paragraph at lines 19--22
 
  []
@@ -1103,46 +1510,62 @@ Underfull \hbox (badness 10000) in paragraph at lines 25--27
 
 )
 
-[21
+[25
 
 
+] (./appendix/statement-A.tex
+Underfull \hbox (badness 10000) in paragraph at lines 19--22
 
-]
+ []
 
-Package caption Warning: Unused \captionsetup[sub] on input line 23.
-See the caption package documentation for explanation.
 
-(./praca.aux (./chapters/wstep.aux) (./chapters/architektura.aux)
+Underfull \hbox (badness 10000) in paragraph at lines 23--24
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 25--27
+
+ []
+
+)
+
+[26
+
+
+] (./praca.aux (./chapters/wstep.aux) (./chapters/architektura.aux)
 (./chapters/implementacja.aux) (./chapters/wyniki.aux)
-(./chapters/podsumowanie.aux) (./appendix/statement-A.aux))
+(./chapters/podsumowanie.aux))
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
 Package rerunfilecheck Info: File `praca.out' has not changed.
-(rerunfilecheck)             Checksum: BBE860584F1EF99BEF33EFCD4871A940;5082.
+(rerunfilecheck)             Checksum: 1FC6063BBD77E39199BA3114645B2AD4;6503.
  ) 
 Here is how much of TeX's memory you used:
- 23727 strings out of 473190
- 442543 string characters out of 5691841
- 1308297 words of memory out of 5000000
- 46410 multiletter control sequences out of 15000+600000
- 635030 words of font info for 114 fonts, out of 8000000 for 9000
+ 45549 strings out of 473190
+ 1047592 string characters out of 5691841
+ 1913050 words of memory out of 5000000
+ 67737 multiletter control sequences out of 15000+600000
+ 627052 words of font info for 98 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 88i,13n,94p,700b,2837s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</opt/texlive/2025/texmf-dist/fonts/type1/urw/courier/ucrb8a.pfb></opt/texliv
-e/2025/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></opt/texlive/2025/texmf-d
-ist/fonts/type1/urw/courier/ucrro8a.pfb></opt/texlive/2025/texmf-dist/fonts/typ
-e1/urw/helvetic/uhvb8a.pfb></opt/texlive/2025/texmf-dist/fonts/type1/urw/helvet
-ic/uhvr8a.pfb></opt/texlive/2025/texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pf
-b></opt/texlive/2025/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></opt/texlive/
-2025/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></opt/texlive/2025/texmf-dist/
-fonts/type1/urw/times/utmr8a.pfb></opt/texlive/2025/texmf-dist/fonts/type1/urw/
-times/utmri8a.pfb>
-Output written on praca.pdf (19 pages, 169311 bytes).
+ 88i,13n,94p,767b,2742s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</opt/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></opt
+/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></opt/texlive
+/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></opt/texlive/2025/t
+exmf-dist/fonts/type1/urw/courier/ucrb8a.pfb></opt/texlive/2025/texmf-dist/font
+s/type1/urw/courier/ucrr8a.pfb></opt/texlive/2025/texmf-dist/fonts/type1/urw/co
+urier/ucrro8a.pfb></opt/texlive/2025/texmf-dist/fonts/type1/urw/helvetic/uhvb8a
+.pfb></opt/texlive/2025/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></opt/te
+xlive/2025/texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb></opt/texlive/2025/t
+exmf-dist/fonts/type1/urw/times/utmb8a.pfb></opt/texlive/2025/texmf-dist/fonts/
+type1/urw/times/utmr8a.pfb></opt/texlive/2025/texmf-dist/fonts/type1/urw/times/
+utmr8a.pfb></opt/texlive/2025/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on praca.pdf (24 pages, 2720260 bytes).
 PDF statistics:
- 464 PDF objects out of 1000 (max. 8388607)
- 414 compressed objects within 5 object streams
- 170 named destinations out of 1000 (max. 500000)
- 219 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 698 PDF objects out of 1000 (max. 8388607)
+ 626 compressed objects within 7 object streams
+ 303 named destinations out of 1000 (max. 500000)
+ 288 words of extra memory for PDF output out of 10000 (max. 10000000)
 

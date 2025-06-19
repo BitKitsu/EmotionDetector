@@ -34,6 +34,10 @@
 \usepackage{makecell} %
 \usepackage{csquotes}
 \usepackage{courier}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18} % Ustawienie wersji dla kompatybilności
 
 % ------------------------
 % --- < listingi > ---
@@ -63,6 +67,7 @@
            {Ź}{{\'Z}}1
            {Ż}{{\.Z}}1,
 	basicstyle=\footnotesize\ttfamily,
+	breaklines=true,
 }
 
 % defninicja stylu python
@@ -170,9 +175,9 @@
 
 %---------------------------------------------------------------------------
 
-\author{Piotr Pająk}
-\shortauthor{Piotr P.}
-\noAlbum{131483}
+\author{Piotr Pająk, Mateusz Czapor}
+\shortauthor{Piotr P., Mateusz C.}
+\noAlbum{131483, 131416}
 
 \titlePL{Projekt Zaliczeniowy: System biometryczny oparty na rozpoznawaniu twarzy i analizie emocji}
 \titleEN{Biometric System Based on Face Recognition and Emotion Analysis}
@@ -253,7 +258,7 @@
 
 % Dodanie spisu tabel do spisu treści
 \addcontentsline{toc}{section}{\textbf{Spis tabel}}
-\listoftables
+
 \clearpage
 
 
@@ -266,6 +271,17 @@
 
 
 % \appendix
-\include{appendix/statement-A}
+% --- Oświadczenia o samodzielności ---
+\makeatletter % Dostęp do komend z @
+
+% Oświadczenie dla pierwszego autora
+{\def\@author{Piotr Pająk}\def\@noAlbum{131483}\input{appendix/statement-A.tex}}
+
+\clearpage
+
+% Oświadczenie dla drugiego autora
+{\def\@author{Mateusz Czapor}\def\@noAlbum{131416}\input{appendix/statement-A.tex}}
+
+\makeatother
 
 \end{document}

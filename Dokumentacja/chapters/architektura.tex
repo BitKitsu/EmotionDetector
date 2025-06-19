@@ -1,4 +1,4 @@
-\chapter{Architektura i technologie}
+\chapter{Architektura, technologie i obsługa systemu}
 \label{chap:architektura}
 
 System został zaprojektowany w architekturze modułowej, co zapewnia jego elastyczność i łatwość w dalszym rozwoju. Składa się z trzech głównych warstw: interfejsu użytkownika (UI), logiki biznesowej oraz warstwy przetwarzania danych. Poniżej przedstawiono kluczowe technologie i komponenty wykorzystane w projekcie.
@@ -6,7 +6,7 @@ System został zaprojektowany w architekturze modułowej, co zapewnia jego elast
 \section{Wykorzystane technologie}
 Do budowy systemu wykorzystano następujące narzędzia i biblioteki:
 \begin{itemize}
-    \item \textbf{Python 3.9+}: Główny język programowania projektu.
+    \item \textbf{Python 3.8}: Główny język programowania projektu.
     \item \textbf{OpenCV (Open Source Computer Vision Library)}: Kluczowa biblioteka do przetwarzania obrazu w czasie rzeczywistym, przechwytywania klatek z kamery oraz podstawowych operacji na obrazie \cite{opencv_library}.
     \item \textbf{GTK 3 (GIMP Toolkit)}: Wykorzystane do stworzenia graficznego interfejsu użytkownika (GUI) aplikacji. Zapewnia natywny wygląd i responsywność na różnych systemach operacyjnych.
     \item \textbf{dlib}: Biblioteka zawierająca zaawansowane algorytmy uczenia maszynowego. W projekcie używana do detekcji punktów charakterystycznych twarzy (facial landmarks) za pomocą pre-trenowanego modelu. Model ten, \texttt{shape\_predictor\_68\_face\_landmarks.dat}, jest dostępny publicznie i został stworzony przez autorów biblioteki \cite{dlib_library}. Można go pobrać ze strony: \url{http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2}.
@@ -18,17 +18,130 @@ Do budowy systemu wykorzystano następujące narzędzia i biblioteki:
 Kod źródłowy został podzielony na logiczne moduły, co ułatwia zarządzanie projektem (szczegółowe listingi wybranych fragmentów znajdują się w rozdziale \ref{chap:implementacja}):
 \begin{itemize}
     \item \texttt{main.py}: Główny plik aplikacji, odpowiedzialny za inicjalizację interfejsu GTK, zarządzanie wątkiem kamery oraz obsługę zdarzeń.
-    \item \texttt{biometric\_system.py}: Serce aplikacji. Zawiera klasę \texttt{BiometricSystem}, która orkiestruje działanie pozostałych komponentów, zarządza sesjami użytkowników i implementuje główną logikę biznesową.
+    \item \texttt{biometric\_system.py}: Zawiera klasę \texttt{BiometricSystem}, która zrządza działaniem pozostałych komponentów, zarządza sesjami użytkowników i implementuje główną logikę biznesową.
     \item \texttt{face\_utils.py}: Moduł odpowiedzialny za operacje związane z rozpoznawaniem twarzy, takie jak kodowanie i porównywanie wektorów cech.
     \item \texttt{emotion\_analyzer.py}: Kluczowy moduł zawierający autorską implementację algorytmu do analizy emocji na podstawie geometrycznych relacji między punktami charakterystycznymi twarzy.
     \item \texttt{config.py}: Plik konfiguracyjny, przechowujący stałe i ustawienia aplikacji.
 \end{itemize}
 
-Na rysunku \ref{fig:placeholder} przedstawiono schemat blokowy architektury systemu.
+Na rysunku \ref{fig:architektura_diag} przedstawiono schemat blokowy architektury systemu.
 
 \begin{figure}[h!]
-\centering
-\includegraphics[width=0.7\textwidth]{figures/placeholder.eps}
-\caption{Schemat architektury systemu biometrycznego.}
-\label{fig:placeholder}
+    \centering
+    \begin{tikzpicture}[
+        block/.style={rectangle, draw, fill=blue!20, 
+            text width=10em, text centered, rounded corners, minimum height=4em},
+        io/.style={trapezium, trapezium left angle=70, trapezium right angle=110, draw, fill=green!20,
+            text width=8em, text centered, minimum height=3em},
+        decision/.style={diamond, draw, fill=orange!20, text width=6em, text centered, aspect=2},
+        line/.style={draw, -latex'}
+    ]
+        % Węzły
+        \node [io] (input) {Klatka wideo (z kamery)};
+        \node [block, below=of input, yshift=-1.5cm] (recognition) {Rozpoznawanie twarzy};
+        \node [decision, below=of recognition, yshift=-1.5cm] (is_known) {Użytkownik znany?};
+        \node [block, right=of is_known, xshift=4cm] (emotion) {Analiza emocji};
+        \node [block, below=of is_known, yshift=-2cm] (register) {Rejestracja nowego użytkownika};
+        \node [block, below=of emotion, yshift=-1.5cm] (session) {Zarządzanie sesją};
+        
+        % Połączenia
+        \path [line] (input) -- (recognition);
+        \path [line] (recognition) -- (is_known);
+        \path [line] (is_known) -- node[above] {Tak} (emotion);
+        \path [line] (is_known) -- node[left] {Nie} (register);
+        \path [line] (emotion) -- (session);
+        \path [line] (register) |- (session);
+
+    \end{tikzpicture}
+    \caption{Schemat blokowy architektury systemu biometrycznego.}
+    \label{fig:architektura_diag}
+\end{figure}
+
+\section{Instrukcja uruchomienia i obsługi}
+\label{sec:instrukcja}
+
+Poniższe kroki opisują, jak przygotować środowisko oraz uruchomić aplikację biometryczną.
+
+\subsection{Instalacja}
+\begin{enumerate}
+   
+    \item \textbf{Tworzenie i aktywacja wirtualnego środowiska}:
+    \begin{lstlisting}[language=bash]
+    python -m venv venv
+    source venv/bin/activate    # Systemy Linux / macOS
+    venv\Scripts\activate.bat   # System Windows
+    \end{lstlisting}
+    
+    \item \textbf{Instalacja zależności} (wymagany Python 3.8):
+    \begin{lstlisting}[language=bash]
+    python3.8 -m pip install -r requirements.txt
+    \end{lstlisting}
+    
+    \item \textbf{Pobranie modelu dlib}: Algorytm rozpoznawania punktów charakterystycznych twarzy wymaga pliku z wytrenowanym modelem. Należy go pobrać i umieścić w głównym katalogu projektu.
+    \begin{lstlisting}[language=bash]
+    # W systemie Linux można użyć poniższych komend:
+    wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
+    bunzip2 shape_predictor_68_face_landmarks.dat.bz2
+    \end{lstlisting}
+    W systemie Windows należy pobrać plik ręcznie z adresu \url{http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2} i wypakować go za pomocą odpowiedniego programu (np. 7-Zip).
+
+\end{enumerate}
+
+\subsection{Uruchomienie i wybór kamery}
+Po poprawnej instalacji aplikację uruchamia się poleceniem:
+\begin{lstlisting}[language=bash]
+python3.8 main.py
+\end{lstlisting}
+
+Przy pierwszym uruchomieniu lub gdy dostępna jest więcej niż jedna kamera, aplikacja wyświetli okno wyboru źródła wideo (pokazane na rys. \ref{fig:wybor_kamery}). Należy wybrać odpowiednie urządzenie z listy i zatwierdzić przyciskiem "OK". Wybór zostanie zapisany w pliku \texttt{config.json} i będzie używany automatycznie przy kolejnych uruchomieniach.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\textwidth]{figures/wybor_kamery.png}
+    \caption{Okno dialogowe wyboru kamery.}
+    \label{fig:wybor_kamery}
+\end{figure}
+
+\subsection{Interfejs główny i rejestracja użytkownika}
+Interfejs główny aplikacji (rys. \ref{fig:gui}) składa się z okna podglądu wideo oraz panelu bocznego z informacjami i przyciskami.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=\textwidth]{figures/uzytkownik_zidentyfikowany.png}
+    \caption{Główny interfejs aplikacji z zidentyfikowanym użytkownikiem.}
+    \label{fig:gui}
+\end{figure}
+
+\textbf{Rejestracja nowej twarzy} jest kluczowym krokiem przed rozpoczęciem korzystania z systemu. Aby zarejestrować użytkownika, należy:
+\begin{enumerate}
+    \item Kliknąć przycisk \textit{Register new user}.
+    \item W oknie dialogowym (rys. \ref{fig:rejestracja_id}) podać unikalny identyfikator (nazwę) użytkownika i zatwierdzić.
+    \item Spojrzeć prosto w kamerę, upewniając się, że twarz jest dobrze oświetlona i w całości widoczna. System automatycznie wykona zdjęcie i przetworzy je.
+    \item System poinformuje o wyniku operacji za pomocą odpowiedniego komunikatu (rys. \ref{fig:rejestracja_sukces} oraz \ref{fig:rejestracja_blad}). W przypadku niepowodzenia, należy ponowić próbę, zwracając uwagę na lepsze warunki oświetleniowe. Należy pamiętać, że podczas rejestracji w kadrze może znajdować się tylko jedna twarz, a ponowne zarejestrowanie istniejącego użytkownika nie jest możliwe.
+\end{enumerate}
+
+\begin{figure}[h!]
+     \centering
+     \begin{subfigure}[b]{0.3\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{figures/rejestracja_podanie_id.png}
+         \caption{Podanie ID.}
+         \label{fig:rejestracja_id}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.3\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{figures/rejestracja_sukces.png}
+         \caption{Sukces.}
+         \label{fig:rejestracja_sukces}
+     \end{subfigure}
+     \hfill
+     \begin{subfigure}[b]{0.3\textwidth}
+         \centering
+         \includegraphics[width=\textwidth]{figures/rejestracja_blad.png}
+         \caption{Błąd.}
+         \label{fig:rejestracja_blad}
+     \end{subfigure}
+        \caption{Proces rejestracji nowego użytkownika.}
+        \label{fig:rejestracja}
 \end{figure}

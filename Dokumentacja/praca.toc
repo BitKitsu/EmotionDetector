@@ -1,27 +1,31 @@
 \babel@toc {polish}{}\relax 
 \contentsline {chapter}{\numberline {1}Wstęp}{6}{chapter.1}%
-\contentsline {chapter}{\numberline {2}Architektura i technologie}{7}{chapter.2}%
+\contentsline {chapter}{\numberline {2}Architektura, technologie i obsługa systemu}{7}{chapter.2}%
 \contentsline {section}{\numberline {2.1}Wykorzystane technologie}{7}{section.2.1}%
 \contentsline {section}{\numberline {2.2}Struktura modułowa}{7}{section.2.2}%
-\contentsline {chapter}{\numberline {3}Autorska implementacja}{9}{chapter.3}%
-\contentsline {section}{\numberline {3.1}Zarządzanie sesją i danymi biometrycznymi}{9}{section.3.1}%
-\contentsline {section}{\numberline {3.2}Optymalizacja wydajności poprzez śledzenie obiektów}{9}{section.3.2}%
-\contentsline {section}{\numberline {3.3}Autorski algorytm analizy emocji}{9}{section.3.3}%
-\contentsline {subsection}{\numberline {3.3.1}Kalibracja spersonalizowanego modelu}{10}{subsection.3.3.1}%
-\contentsline {subsection}{\numberline {3.3.2}Geometryczna analiza cech}{10}{subsection.3.3.2}%
-\contentsline {subsection}{\numberline {3.3.3}Wnioskowanie oparte na regułach}{10}{subsection.3.3.3}%
-\contentsline {section}{\numberline {3.4}Przykładowy listing kodu}{10}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}Wątek przechwytywania wideo}{11}{subsection.3.4.1}%
-\contentsline {subsection}{\numberline {3.4.2}Rejestracja nowych użytkowników}{11}{subsection.3.4.2}%
-\contentsline {subsection}{\numberline {3.4.3}Proces uwierzytelniania}{12}{subsection.3.4.3}%
-\contentsline {section}{\numberline {3.5}Instrukcja uruchomienia i obsługi}{12}{section.3.5}%
-\contentsline {section}{\numberline {3.6}Zależność od pliku \texttt {shape\_predictor\_68\_face\_landmarks.dat}}{13}{section.3.6}%
-\contentsline {chapter}{\numberline {4}Wyniki i dyskusja}{14}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Wydajność systemu}{14}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Możliwości implementacyjne i kierunki rozwoju}{14}{section.4.2}%
-\contentsline {chapter}{\numberline {5}Podsumowanie}{16}{chapter.5}%
-\contentsline {section}{\textbf {Bibliografia}}{17}{section*.4}%
-\contentsline {section}{\textbf {Spis rysunków}}{18}{chapter*.5}%
-\contentsline {section}{\textbf {Spis tabel}}{19}{chapter*.5}%
-\contentsline {section}{\textbf {Spis listingów}}{20}{chapter*.5}%
-\contentsline {section}{\textbf {Oświadczenie studenta o samodzielności pracy}}{21}{chapter*.7}%
+\contentsline {section}{\numberline {2.3}Instrukcja uruchomienia i obsługi}{8}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Instalacja}{8}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Uruchomienie i wybór kamery}{9}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}Interfejs główny i rejestracja użytkownika}{9}{subsection.2.3.3}%
+\contentsline {chapter}{\numberline {3}Autorska implementacja}{11}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Zarządzanie sesją i danymi biometrycznymi}{11}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Mechanizmy rozpoznawania i optymalizacji}{11}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Identyfikacja użytkownika i metryki dopasowania}{11}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Optymalizacja wydajności poprzez śledzenie obiektów}{12}{subsection.3.2.2}%
+\contentsline {section}{\numberline {3.3}Autorski algorytm analizy emocji}{13}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Kalibracja spersonalizowanego modelu}{13}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Geometryczna analiza cech}{13}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}Wnioskowanie oparte na regułach i progach}{14}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}Implementacja analizy geometrycznej}{14}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.3.5}Wątek przechwytywania wideo}{15}{subsection.3.3.5}%
+\contentsline {subsection}{\numberline {3.3.6}Rejestracja nowych użytkowników}{16}{subsection.3.3.6}%
+\contentsline {chapter}{\numberline {4}Wyniki i analiza}{19}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Skuteczność autorskiego systemu zarządzania danymi}{19}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Analiza wydajności jako efekt inteligentnego zarządzania sesją}{19}{section.4.2}%
+\contentsline {chapter}{\numberline {5}Podsumowanie}{21}{chapter.5}%
+\contentsline {section}{\textbf {Bibliografia}}{22}{section*.7}%
+\contentsline {section}{\textbf {Spis rysunków}}{23}{chapter*.8}%
+\contentsline {section}{\textbf {Spis tabel}}{24}{chapter*.8}%
+\contentsline {section}{\textbf {Spis listingów}}{24}{chapter*.8}%
+\contentsline {section}{\textbf {Oświadczenie studenta o samodzielności pracy}}{25}{chapter*.10}%
+\contentsline {section}{\textbf {Oświadczenie studenta o samodzielności pracy}}{26}{chapter*.11}%

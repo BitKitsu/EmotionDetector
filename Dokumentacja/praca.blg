@@ -9,33 +9,32 @@ A level-1 auxiliary file: chapters/podsumowanie.aux
 The style file: plain.bst
 A level-1 auxiliary file: appendix/statement-A.aux
 Database file #1: bibliografia.bib
-Warning--empty booktitle in mediapipe
 You've used 3 entries,
             2118 wiz_defined-function locations,
-            520 strings with 4683 characters,
-and the built_in function-call counts, 1318 in all, are:
-= -- 113
+            520 strings with 4690 characters,
+and the built_in function-call counts, 1294 in all, are:
+= -- 114
 > -- 87
 < -- 2
 + -- 35
 - -- 32
 * -- 93
-:= -- 218
+:= -- 219
 add.period$ -- 9
 call.type$ -- 3
 change.case$ -- 25
 chr.to.int$ -- 0
-cite$ -- 4
-duplicate$ -- 45
-empty$ -- 93
+cite$ -- 3
+duplicate$ -- 42
+empty$ -- 84
 format.name$ -- 32
-if$ -- 274
+if$ -- 266
 int.to.chr$ -- 0
 int.to.str$ -- 3
 missing$ -- 2
 newline$ -- 18
 num.names$ -- 6
-pop$ -- 36
+pop$ -- 31
 preamble$ -- 1
 purify$ -- 22
 quote$ -- 0
@@ -47,8 +46,7 @@ text.length$ -- 2
 text.prefix$ -- 0
 top$ -- 0
 type$ -- 12
-warning$ -- 1
+warning$ -- 0
 while$ -- 8
 width$ -- 4
-write$ -- 33
-(There was 1 warning)
+write$ -- 34
