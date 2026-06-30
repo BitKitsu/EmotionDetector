@@ -87,7 +87,7 @@ Ten projekt jest dostępny na licencji MIT. Szczegóły w pliku LICENSE.
 
 ## Autor
 
-[Twoje Imię i Nazwisko]
+Pająk Piotr
 
 ## Podziękowania
 
