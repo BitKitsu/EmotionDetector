@@ -89,8 +89,7 @@ Ten projekt jest dostępny na licencji MIT. Szczegóły w pliku LICENSE.
 
 Pająk Piotr
 
-## Podziękowania
+## Dodatkowe informacje
 
 - Biblioteka MediaPipe za świetne modele do śledzenia twarzy
 - Biblioteka face_recognition za łatwe w użyciu API do rozpoznawania twarzy
-- Społeczność Open Source za cenne narzędzia i biblioteki
